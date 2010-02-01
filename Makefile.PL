@@ -14,6 +14,7 @@ WriteMakefile(
     PREREQ_PM => {
         'Test::More'         => 0,
         'Search::OpenSearch' => 0,
+        'SWISH::Prog::KSx'   => 0.06,
     },
     dist => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Search-OpenSearch-Engine-KSx-*' },

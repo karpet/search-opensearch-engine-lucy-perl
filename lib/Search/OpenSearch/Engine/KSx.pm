@@ -24,6 +24,11 @@ Search::OpenSearch::Engine::KSx - KinoSearch server with OpenSearch results
 
 =head1 SYNOPSIS
 
+=head1 METHODS
+
+=head2 init_searcher
+
+Returns a SWISH::Prog::KSx::Searcher object.
 
 =head1 AUTHOR
 
