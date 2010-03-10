@@ -33,7 +33,7 @@ sub build_facets {
         bit_vector => $bit_vec, );
 
     $ks_searcher->collect(
-        query     => $query_parser->parse("$query"),
+        query     => $query_parser->parse("$query")->as_ks_query(),
         collector => $collector
     );
 
