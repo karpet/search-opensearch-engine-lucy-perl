@@ -7,7 +7,7 @@ use SWISH::Prog::KSx::Searcher;
 use KinoSearch::Object::BitVector;
 use KinoSearch::Search::HitCollector::BitCollector;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 sub init_searcher {
     my $self     = shift;
