@@ -95,7 +95,12 @@ sub process_result {
     );
     for my $field (@$fields) {
         my $str = $XMLer->escape( $result->get_property($field) || '' );
-        $res{$field} = [ map { $hiliter->light($_) } split( m/\003/, $str ) ];
+        if ($self->no_hiliting($field)) {
+            $res{$field} = [ split( m/\003/, $str ) ];
+        }
+        else {
+            $res{$field} = [ map { $hiliter->light( $snipper->snip($_) ) } split( m/\003/, $str ) ];
+        }
     }
     return \%res;
 }
