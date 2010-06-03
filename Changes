@@ -9,3 +9,6 @@ Revision history for Search-OpenSearch-Engine-KSx
 0.03    23 May 2010
     * use Search::Query::Dialect::KSx
 
+0.04    xxx
+    * preserve multi-value fields as arrays in response.
+

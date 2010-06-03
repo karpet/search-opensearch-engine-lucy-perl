@@ -7,7 +7,7 @@ use SWISH::Prog::KSx::Searcher;
 use KinoSearch::Object::BitVector;
 use KinoSearch::Search::HitCollector::BitCollector;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub init_searcher {
     my $self     = shift;
@@ -68,6 +68,38 @@ sub build_facets {
     return \%facet_struct;
 }
 
+sub process_result {
+    my ( $self, %args ) = @_;
+    my $result  = $args{result};
+    my $hiliter = $args{hiliter};
+    my $XMLer   = $args{XMLer};
+    my $snipper = $args{snipper};
+    my $fields  = $args{fields};
+
+    my $title   = $XMLer->escape( $result->title   || '' );
+    my $summary = $XMLer->escape( $result->summary || '' );
+
+    # \003 is the record-delimiter in Swish3
+    # we ignore it for title and summary, but split
+    # all other fields into an array to preserve
+    # multiple values.
+    $title   =~ s/\003/ /g;
+    $summary =~ s/\003/ /g;
+
+    my %res = (
+        score   => $result->score,
+        uri     => $result->uri,
+        mtime   => $result->mtime,
+        title   => $hiliter->light($title),
+        summary => $hiliter->light( $snipper->snip($summary) ),
+    );
+    for my $field (@$fields) {
+        my $str = $XMLer->escape( $result->get_property($field) || '' );
+        $res{$field} = [ map { $hiliter->light($_) } split( m/\003/, $str ) ];
+    }
+    return \%res;
+}
+
 1;
 
 __END__
@@ -87,6 +119,10 @@ Returns a SWISH::Prog::KSx::Searcher object.
 =head2 build_facets( I<query>, I<results> )
 
 Returns hash ref of facets from I<results>. See Search::OpenSearch::Engine.
+
+=head2 process_result( I<args> )
+
+Overrides base method to preserve multi-value fields as arrays.
 
 =head1 AUTHOR
 
