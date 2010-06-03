@@ -50,7 +50,7 @@ sub build_facets {
 
             # unique-ify
             my %val = map { $_ => $_ }
-                split( m/\003/, $doc->{$name} );
+                split( m/\003/, (defined $doc->{$name} ? $doc->{$name} : '') );
             for my $value ( keys %val ) {
                 $facets{$name}->{$value}++;
             }
