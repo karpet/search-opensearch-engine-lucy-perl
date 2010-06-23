@@ -13,7 +13,7 @@ WriteMakefile(
     PL_FILES  => {},
     PREREQ_PM => {
         'Test::More'         => 0,
-        'Search::OpenSearch' => 0.05,
+        'Search::OpenSearch' => 0.07,
         'SWISH::Prog::KSx'   => 0.08,
     },
     dist => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
