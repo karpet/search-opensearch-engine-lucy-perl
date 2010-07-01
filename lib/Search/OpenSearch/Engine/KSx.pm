@@ -6,6 +6,7 @@ use base qw( Search::OpenSearch::Engine );
 use SWISH::Prog::KSx::Searcher;
 use KinoSearch::Object::BitVector;
 use KinoSearch::Search::HitCollector::BitCollector;
+use Data::Dump qw( dump );
 
 our $VERSION = '0.04';
 
@@ -20,10 +21,12 @@ sub build_facets {
     my $self     = shift;
     my $query    = shift or croak "query required";
     my $results  = shift or croak "results required";
+    $self->logger and $self->logger->log("build_facets check for self->facets=" . $self->facets);
     my $facetobj = $self->facets or return;
 
     my @facet_names  = @{ $facetobj->names };
-    my $sample_size  = $facetobj->sample_size;
+    my $sample_size  = $facetobj->sample_size || 0;
+    $self->logger and $self->logger->log("building facets for " . dump(\@facet_names) . " with sample_size=$sample_size");
     my $searcher     = $self->searcher;
     my $ks_searcher  = $searcher->{ks};
     my $query_parser = $searcher->{qp};
@@ -41,7 +44,9 @@ sub build_facets {
     my %facets;
     my $doc_id = 0;
     my $count  = 0;
+    my $loops  = 0;
     while (1) {
+        $loops++;
         $doc_id = $bit_vec->next_set_bit( $doc_id + 1 );
         last if $doc_id == -1;
         last if $sample_size and ++$count > $sample_size;
@@ -57,6 +62,8 @@ sub build_facets {
             }
         }
     }
+
+    $self->logger and $self->logger->log("got " . scalar(keys %facets) . " facets in $loops loops");
 
     # turn the struct inside out a bit, esp for XML
     my %facet_struct;
