@@ -8,7 +8,7 @@ use KinoSearch::Object::BitVector;
 use KinoSearch::Search::HitCollector::BitCollector;
 use Data::Dump qw( dump );
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 sub init_searcher {
     my $self     = shift;

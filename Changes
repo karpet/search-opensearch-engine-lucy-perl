@@ -12,3 +12,5 @@ Revision history for Search-OpenSearch-Engine-KSx
 0.04    22 June 2010
     * preserve multi-value fields as arrays in response.
 
+0.05    xxx
+    * add logging
