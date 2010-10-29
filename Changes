@@ -14,3 +14,6 @@ Revision history for Search-OpenSearch-Engine-KSx
 
 0.05    25 July 2010
     * add logging
+
+0.06    28 Oct 2010
+    * bump KSx dependency to 0.16
