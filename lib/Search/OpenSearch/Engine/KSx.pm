@@ -8,7 +8,7 @@ use KinoSearch::Object::BitVector;
 use KinoSearch::Search::HitCollector::BitCollector;
 use Data::Dump qw( dump );
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 sub init_searcher {
     my $self     = shift;
@@ -47,10 +47,10 @@ sub build_facets {
     my $loops  = 0;
     while (1) {
         $loops++;
-        $doc_id = $bit_vec->next_set_bit( $doc_id + 1 );
+        $doc_id = $bit_vec->next_hit( $doc_id + 1 );
         last if $doc_id == -1;
         last if $sample_size and ++$count > $sample_size;
-        my $doc = $ks_searcher->fetch_doc( doc_id => $doc_id );
+        my $doc = $ks_searcher->fetch_doc( $doc_id );
         for my $name (@facet_names) {
 
             # unique-ify
