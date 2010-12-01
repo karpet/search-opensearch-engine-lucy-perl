@@ -18,5 +18,5 @@ Revision history for Search-OpenSearch-Engine-KSx
 0.06    28 Oct 2010
     * bump KSx dependency to 0.16
 
-0.07    xxx
+0.07    30 Nov 2010
     * facet fetching fixes related to KS 0.31 API changes
