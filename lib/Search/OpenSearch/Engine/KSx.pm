@@ -121,6 +121,8 @@ sub process_result {
     return \%res;
 }
 
+sub has_rest_api { 1 }
+
 1;
 
 __END__
