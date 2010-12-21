@@ -3,10 +3,13 @@ use strict;
 use warnings;
 use Carp;
 use base qw( Search::OpenSearch::Engine );
+use SWISH::Prog::KSx::Indexer;
 use SWISH::Prog::KSx::Searcher;
+use SWISH::Prog::Doc;
 use KinoSearch::Object::BitVector;
 use KinoSearch::Search::HitCollector::BitCollector;
 use Data::Dump qw( dump );
+use Scalar::Util qw( blessed );
 
 our $VERSION = '0.07';
 
@@ -18,15 +21,20 @@ sub init_searcher {
 }
 
 sub build_facets {
-    my $self     = shift;
-    my $query    = shift or croak "query required";
-    my $results  = shift or croak "results required";
-    $self->logger and $self->logger->log("build_facets check for self->facets=" . $self->facets);
+    my $self    = shift;
+    my $query   = shift or croak "query required";
+    my $results = shift or croak "results required";
+    $self->logger
+        and $self->logger->log(
+        "build_facets check for self->facets=" . $self->facets );
     my $facetobj = $self->facets or return;
 
-    my @facet_names  = @{ $facetobj->names };
-    my $sample_size  = $facetobj->sample_size || 0;
-    $self->logger and $self->logger->log("building facets for " . dump(\@facet_names) . " with sample_size=$sample_size");
+    my @facet_names = @{ $facetobj->names };
+    my $sample_size = $facetobj->sample_size || 0;
+    $self->logger
+        and $self->logger->log( "building facets for "
+            . dump( \@facet_names )
+            . " with sample_size=$sample_size" );
     my $searcher     = $self->searcher;
     my $ks_searcher  = $searcher->{ks};
     my $query_parser = $searcher->{qp};
@@ -50,7 +58,7 @@ sub build_facets {
         $doc_id = $bit_vec->next_hit( $doc_id + 1 );
         last if $doc_id == -1;
         last if $sample_size and ++$count > $sample_size;
-        my $doc = $ks_searcher->fetch_doc( $doc_id );
+        my $doc = $ks_searcher->fetch_doc($doc_id);
         for my $name (@facet_names) {
 
             # unique-ify
@@ -63,7 +71,9 @@ sub build_facets {
         }
     }
 
-    $self->logger and $self->logger->log("got " . scalar(keys %facets) . " facets in $loops loops");
+    $self->logger
+        and $self->logger->log(
+        "got " . scalar( keys %facets ) . " facets in $loops loops" );
 
     # turn the struct inside out a bit, esp for XML
     my %facet_struct;
@@ -121,7 +131,86 @@ sub process_result {
     return \%res;
 }
 
-sub has_rest_api { 1 }
+sub has_rest_api {1}
+
+sub _massage_rest_req_into_doc {
+    my ( $self, $req ) = @_;
+
+    if ( !blessed($req) ) {
+        return SWISH::Prog::Doc->new(
+            version => 3,
+            %$req
+        );
+    }
+
+    # $req should act like a HTTP::Request object.
+    my $doc = SWISH::Prog::Doc->new(
+        version => 3,
+        url     => $req->uri,
+        content => $req->content,
+
+        # TODO
+        type => $req->header('Content-Type'),
+
+        # type
+        # action
+        # parser
+        # modtime
+    );
+
+    return $doc;
+}
+
+sub PUT {
+    my $self    = shift;
+    my $req     = shift or croak "request required";
+    my $doc     = $self->_massage_rest_req_into_doc($req);
+    my $indexer = SWISH::Prog::KSx::Indexer->new( invindex => $self->index );
+    $indexer->process($doc);
+    $indexer->finish();
+    return { code => 201, };
+}
+
+sub POST {
+    my $self    = shift;
+    my $req     = shift or croak "request required";
+    my $doc     = $self->_massage_rest_req_into_doc($req);
+    my $indexer = SWISH::Prog::KSx::Indexer->new( invindex => $self->index );
+    $indexer->process($doc);
+    $indexer->finish();
+    return { code => 200, };
+}
+
+sub DELETE {
+    my $self    = shift;
+    my $uri     = shift or croak "uri required";
+    my $indexer = SWISH::Prog::KSx::Indexer->new( invindex => $self->index );
+    $indexer->{ks}->delete_by_term(
+        field => 'swishdocpath',
+        term  => $uri,
+    );
+    $indexer->finish();    # so any open handles are invalidated.
+    return {
+        code => 204,       # no content in response
+    };
+}
+
+sub GET {
+    my $self = shift;
+    my $uri  = shift or croak "uri required";
+    my $q    = "swishdocpath=$uri";
+    my $resp = $self->search(
+        q => $q,
+        h => 0,            # no hiliting
+    );
+    if ( $resp->total != 1 ) {
+        return { code => 404, };
+    }
+    return {
+        code => 200,
+        resp => $resp->results->[0],
+    };
+}
 
 1;
 
@@ -146,6 +235,18 @@ Returns hash ref of facets from I<results>. See Search::OpenSearch::Engine.
 =head2 process_result( I<args> )
 
 Overrides base method to preserve multi-value fields as arrays.
+
+=head2 has_rest_api
+
+Returns true.
+
+=head2 PUT( I<doc> )
+
+=head2 POST( I<doc> )
+
+=head2 DELETE( I<uri> )
+
+=head2 GET( I<uri> )
 
 =head1 AUTHOR
 
