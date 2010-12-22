@@ -161,54 +161,74 @@ sub _massage_rest_req_into_doc {
     return $doc;
 }
 
+sub init_indexer {
+    my $self = shift;
+
+    # unlike a Searcher, which has an array of invindex objects,
+    # the Indexer wants only one. We take the first by default,
+    # but a subclass could do more subtle logic here.
+
+    my $indexer
+        = SWISH::Prog::KSx::Indexer->new( invindex => $self->index->[0] );
+    return $indexer;
+}
+
 sub PUT {
     my $self    = shift;
     my $req     = shift or croak "request required";
     my $doc     = $self->_massage_rest_req_into_doc($req);
-    my $indexer = SWISH::Prog::KSx::Indexer->new( invindex => $self->index );
+    my $indexer = $self->init_indexer();
     $indexer->process($doc);
-    $indexer->finish();
-    return { code => 201, };
+    my $total = $indexer->finish();
+    return { code => 201, total => $total, };
 }
 
 sub POST {
-    my $self    = shift;
-    my $req     = shift or croak "request required";
-    my $doc     = $self->_massage_rest_req_into_doc($req);
-    my $indexer = SWISH::Prog::KSx::Indexer->new( invindex => $self->index );
+    my $self     = shift;
+    my $req      = shift or croak "request required";
+    my $doc      = $self->_massage_rest_req_into_doc($req);
+    my $uri      = $doc->url;
+    my $existing = $self->GET($uri);
+    if ( $existing->{code} != 200 ) {
+        return { code => 404 };
+    }
+    my $indexer = $self->init_indexer();
     $indexer->process($doc);
-    $indexer->finish();
-    return { code => 200, };
+    my $total = $indexer->finish();
+    return { code => 200, total => $total, };
 }
 
 sub DELETE {
     my $self    = shift;
     my $uri     = shift or croak "uri required";
-    my $indexer = SWISH::Prog::KSx::Indexer->new( invindex => $self->index );
-    $indexer->{ks}->delete_by_term(
+    my $indexer = $self->init_indexer();
+    $indexer->get_ks->delete_by_term(
         field => 'swishdocpath',
         term  => $uri,
     );
-    $indexer->finish();    # so any open handles are invalidated.
+    my $total = $indexer->finish();    # so any open handles are invalidated.
     return {
-        code => 204,       # no content in response
+        code  => 204,                  # no content in response
+        total => $total,
     };
 }
 
 sub GET {
     my $self = shift;
-    my $uri  = shift or croak "uri required";
+    my $uri = shift or croak "uri required";
+
+    # TODO use internal KS searcher directly to avoid
     my $q    = "swishdocpath=$uri";
     my $resp = $self->search(
         q => $q,
-        h => 0,            # no hiliting
+        h => 0,    # no hiliting
     );
     if ( $resp->total != 1 ) {
         return { code => 404, };
     }
     return {
         code => 200,
-        resp => $resp->results->[0],
+        doc  => $resp->results->[0],
     };
 }
 

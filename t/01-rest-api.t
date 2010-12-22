@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-use Test::More tests => 10;
+use Test::More tests => 6;
 use Data::Dump qw( dump );
 use JSON::XS;
 use Search::OpenSearch::Engine::KSx;
@@ -22,23 +22,35 @@ SKIP: {
 
     my $resp = $engine->PUT(
         {   url     => 'foo/bar',
-            content => 'i am a test',
-            type    => 'text/plain',
+            content => '<doc><title>i am a test</title></doc>',
+            type    => 'application/xml',
         }
     );
+
     dump($resp);
+    is( $resp->{code}, 201, "PUT == 201" );
 
     $resp = $engine->GET('foo/bar');
-    dump($resp);
+
+    #dump($resp);
+    is( $resp->{code}, 200, "GET == 200" );
 
     $resp = $engine->POST(
         {   url     => 'foo/bar',
-            content => 'i am a POST test',
-            type    => 'text/plain',
+            content => '<doc><title>i am a POST test</title></doc>',
+            type    => 'application/xml',
         }
     );
+
     dump($resp);
+    is( $resp->{code}, 200, "POST == 200" );
+    $resp = $engine->GET('foo/bar');
+
+    dump($resp);
+    is( $resp->{code}, 200, "GET == 200" );
+    is( $resp->{doc}->{title}, "i am a POST test", "title updated" );
 
     $resp = $engine->DELETE('foo/bar');
     dump($resp);
+    is( $resp->{code}, 204, "DELETE == 204" );
 }
