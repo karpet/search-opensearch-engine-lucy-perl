@@ -1,10 +1,12 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-use Test::More tests => 6;
+use Test::More tests => 7;
 use Data::Dump qw( dump );
 use JSON::XS;
 use Search::OpenSearch::Engine::KSx;
+
+my $debug = $ENV{PERL_DEBUG} || 0;
 
 SKIP: {
 
@@ -20,19 +22,26 @@ SKIP: {
         fields => [qw( topics people places orgs author )],
     );
 
-    my $resp = $engine->PUT(
+    my $resp;
+
+    #dump( $engine->search( q => 'swishdocpath=foo/bar' ) );
+
+    $resp = $engine->GET('foo/bar');
+    $debug and dump($resp);
+    is( $resp->{code}, 404, "GET == 404" );
+
+    $resp = $engine->PUT(
         {   url     => 'foo/bar',
             content => '<doc><title>i am a test</title></doc>',
             type    => 'application/xml',
         }
     );
-
-    dump($resp);
+    $debug and dump($resp);
     is( $resp->{code}, 201, "PUT == 201" );
 
     $resp = $engine->GET('foo/bar');
 
-    #dump($resp);
+    $debug and dump($resp);
     is( $resp->{code}, 200, "GET == 200" );
 
     $resp = $engine->POST(
@@ -42,15 +51,15 @@ SKIP: {
         }
     );
 
-    dump($resp);
+    $debug and dump($resp);
     is( $resp->{code}, 200, "POST == 200" );
-    $resp = $engine->GET('foo/bar');
 
-    dump($resp);
+    $resp = $engine->GET('foo/bar');
+    $debug and dump($resp);
     is( $resp->{code}, 200, "GET == 200" );
     is( $resp->{doc}->{title}, "i am a POST test", "title updated" );
 
     $resp = $engine->DELETE('foo/bar');
-    dump($resp);
+    $debug and dump($resp);
     is( $resp->{code}, 204, "DELETE == 204" );
 }

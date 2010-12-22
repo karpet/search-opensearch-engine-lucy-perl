@@ -180,7 +180,14 @@ sub PUT {
     my $indexer = $self->init_indexer();
     $indexer->process($doc);
     my $total = $indexer->finish();
-    return { code => 201, total => $total, };
+
+    #delete $self->{searcher};
+    my $exists = $self->GET( $doc->url );
+
+    if ( $exists->{code} != 200 ) {
+        return { code => 500, msg => 'Failed to PUT doc' };
+    }
+    return { code => 201, total => $total, doc => $exists->{doc} };
 }
 
 sub POST {
@@ -190,11 +197,16 @@ sub POST {
     my $uri      = $doc->url;
     my $existing = $self->GET($uri);
     if ( $existing->{code} != 200 ) {
-        return { code => 404 };
+        return {
+            code => 404,
+            msg  => "$uri cannot be updated because it does not exist"
+        };
     }
     my $indexer = $self->init_indexer();
     $indexer->process($doc);
     my $total = $indexer->finish();
+
+    #delete $self->{searcher};
     return { code => 200, total => $total, };
 }
 
@@ -217,8 +229,11 @@ sub GET {
     my $self = shift;
     my $uri = shift or croak "uri required";
 
-    # TODO use internal KS searcher directly to avoid
-    my $q    = "swishdocpath=$uri";
+    # TODO use internal KS searcher directly to avoid needing field defined
+    my $q = "swishdocpath=$uri";
+
+    #warn "self->searcher->ks = " . $self->searcher->{ks};
+    
     my $resp = $self->search(
         q => $q,
         h => 0,    # no hiliting
@@ -247,6 +262,10 @@ Search::OpenSearch::Engine::KSx - KinoSearch server with OpenSearch results
 =head2 init_searcher
 
 Returns a SWISH::Prog::KSx::Searcher object.
+
+=head2 init_indexer
+
+Returns a SWISH::Prog::KSx::Indexer object (used by the REST API).
 
 =head2 build_facets( I<query>, I<results> )
 
