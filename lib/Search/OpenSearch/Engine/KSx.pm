@@ -136,6 +136,8 @@ sub has_rest_api {1}
 sub _massage_rest_req_into_doc {
     my ( $self, $req ) = @_;
 
+    #dump $req;
+
     if ( !blessed($req) ) {
         return SWISH::Prog::Doc->new(
             version => 3,
@@ -143,20 +145,25 @@ sub _massage_rest_req_into_doc {
         );
     }
 
-    # $req should act like a HTTP::Request object.
-    my $doc = SWISH::Prog::Doc->new(
-        version => 3,
-        url     => $req->uri,
-        content => $req->content,
+    #dump $req->headers;
 
-        # TODO
-        type => $req->header('Content-Type'),
+    # $req should act like a HTTP::Request object.
+    my %args = (
+        version => 3,
+        url     => $req->uri->path,        # TODO test
+        content => $req->content,
+        size    => $req->content_length,
+        type    => $req->content_type,
 
         # type
         # action
         # parser
         # modtime
     );
+
+    #dump \%args;
+
+    my $doc = SWISH::Prog::Doc->new(%args);
 
     return $doc;
 }
@@ -218,10 +225,9 @@ sub DELETE {
         field => 'swishdocpath',
         term  => $uri,
     );
-    my $total = $indexer->finish();    # so any open handles are invalidated.
+    $indexer->finish();    # so any open handles are invalidated.
     return {
-        code  => 204,                  # no content in response
-        total => $total,
+        code => 204,       # no content in response
     };
 }
 
@@ -233,7 +239,7 @@ sub GET {
     my $q = "swishdocpath=$uri";
 
     #warn "self->searcher->ks = " . $self->searcher->{ks};
-    
+
     my $resp = $self->search(
         q => $q,
         h => 0,    # no hiliting
