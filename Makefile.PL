@@ -13,8 +13,8 @@ WriteMakefile(
     PL_FILES  => {},
     PREREQ_PM => {
         'Test::More'         => 0,
-        'Search::OpenSearch' => 0.10,
-        'SWISH::Prog::KSx'   => 0.16,
+        'Search::OpenSearch' => 0.11,
+        'SWISH::Prog::KSx'   => 0.17,
     },
     dist => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Search-OpenSearch-Engine-KSx-*' },
