@@ -16,7 +16,10 @@ our $VERSION = '0.08';
 sub init_searcher {
     my $self     = shift;
     my $index    = $self->index or croak "index not defined";
-    my $searcher = SWISH::Prog::KSx::Searcher->new( invindex => $index );
+    my $searcher = SWISH::Prog::KSx::Searcher->new(
+        invindex => $index,
+        debug    => $self->debug,
+    );
     return $searcher;
 }
 
@@ -175,82 +178,137 @@ sub init_indexer {
     # the Indexer wants only one. We take the first by default,
     # but a subclass could do more subtle logic here.
 
-    my $indexer
-        = SWISH::Prog::KSx::Indexer->new( invindex => $self->index->[0] );
+    my $indexer = SWISH::Prog::KSx::Indexer->new(
+        invindex => $self->index->[0],
+        debug    => $self->debug,
+    );
     return $indexer;
 }
 
+# PUT only if it does not yet exist
 sub PUT {
-    my $self    = shift;
-    my $req     = shift or croak "request required";
-    my $doc     = $self->_massage_rest_req_into_doc($req);
+    my $self   = shift;
+    my $req    = shift or croak "request required";
+    my $doc    = $self->_massage_rest_req_into_doc($req);
+    my $uri    = $doc->url;
+    my $exists = $self->GET($uri);
+    if ( $exists->{code} == 200 ) {
+        return { code => 409, msg => "Document $uri already exists" };
+    }
     my $indexer = $self->init_indexer();
     $indexer->process($doc);
     my $total = $indexer->finish();
-
-    #delete $self->{searcher};
-    my $exists = $self->GET( $doc->url );
-
+    $exists = $self->GET( $doc->url );
     if ( $exists->{code} != 200 ) {
         return { code => 500, msg => 'Failed to PUT doc' };
     }
     return { code => 201, total => $total, doc => $exists->{doc} };
 }
 
+# POST allows new and updates
 sub POST {
+    my $self    = shift;
+    my $req     = shift or croak "request required";
+    my $doc     = $self->_massage_rest_req_into_doc($req);
+    my $uri     = $doc->url;
+    my $indexer = $self->init_indexer();
+    $indexer->process($doc);
+    my $total  = $indexer->finish();
+    my $exists = $self->GET( $doc->url );
+
+    if ( $exists->{code} != 200 ) {
+        return { code => 500, msg => 'Failed to POST doc' };
+    }
+    return { code => 200, total => $total, doc => $exists->{doc} };
+}
+
+sub DELETE {
     my $self     = shift;
-    my $req      = shift or croak "request required";
-    my $doc      = $self->_massage_rest_req_into_doc($req);
-    my $uri      = $doc->url;
+    my $uri      = shift or croak "uri required";
     my $existing = $self->GET($uri);
     if ( $existing->{code} != 200 ) {
         return {
             code => 404,
-            msg  => "$uri cannot be updated because it does not exist"
+            msg  => "$uri cannot be deleted because it does not exist"
         };
     }
-    my $indexer = $self->init_indexer();
-    $indexer->process($doc);
-    my $total = $indexer->finish();
-
-    #delete $self->{searcher};
-    return { code => 200, total => $total, };
-}
-
-sub DELETE {
-    my $self    = shift;
-    my $uri     = shift or croak "uri required";
     my $indexer = $self->init_indexer();
     $indexer->get_ks->delete_by_term(
         field => 'swishdocpath',
         term  => $uri,
     );
-    $indexer->finish();    # so any open handles are invalidated.
+    $indexer->finish();
     return {
-        code => 204,       # no content in response
+        code => 204,    # no content in response
     };
+}
+
+sub _get_swishdocpath_analyzer {
+    my $self = shift;
+    return $self->{_uri_analyzer} if exists $self->{_uri_analyzer};
+    my $qp    = $self->searcher->{qp};         # TODO expose this as accessor?
+    my $field = $qp->get_field('swishdocpath');
+    if ( !$field ) {
+
+        # field is not defined as a MetaName, just a PropertyName,
+        # so we do not analyze it
+        $self->{_uri_analyzer} = 0;            # exists but false
+        return 0;
+    }
+    $self->{_uri_analyzer} = $field->analyzer;
+    return $self->{_uri_analyzer};
+}
+
+sub _analyze_uri_string {
+    my ( $self, $uri ) = @_;
+    my $analyzer = $self->_get_swishdocpath_analyzer();
+    if ( !$analyzer ) {
+        return $uri;
+    }
+    else {
+        return grep { defined and length } @{ $analyzer->split($uri) };
+    }
 }
 
 sub GET {
     my $self = shift;
     my $uri = shift or croak "uri required";
 
-    # TODO use internal KS searcher directly to avoid needing field defined
-    my $q = "swishdocpath=$uri";
-
-    #warn "self->searcher->ks = " . $self->searcher->{ks};
-
-    my $resp = $self->search(
-        q => $q,
-        h => 0,    # no hiliting
+    # use internal KS searcher directly to avoid needing MetaName defined
+    my $q = KinoSearch::Search::PhraseQuery->new(
+        field => 'swishdocpath',
+        terms => [ $self->_analyze_uri_string($uri) ]
     );
-    if ( $resp->total != 1 ) {
+    my $ks_searcher = $self->searcher->get_ks();
+    my $hits = $ks_searcher->hits( query => $q );
+
+    #warn "$q total=" . $hits->total_hits();
+    my $hitdoc = $hits->next;
+
+    if ( !$hitdoc ) {
         return { code => 404, };
     }
-    return {
+
+    #dump $hitdoc;
+
+    # get all fields
+    my %doc;
+    my $fields = $self->fields;
+    for my $field (@$fields) {
+        my $str = $hitdoc->{$field};
+        $doc{$field} = [ split( m/\003/, $str ) ];
+    }
+    $doc{title}   = $hitdoc->{swishtitle};
+    $doc{summary} = $hitdoc->{swishdescription};
+
+    my $ret = {
         code => 200,
-        doc  => $resp->results->[0],
+        doc  => \%doc,
     };
+
+    #dump $ret;
+
+    return $ret;
 }
 
 1;
