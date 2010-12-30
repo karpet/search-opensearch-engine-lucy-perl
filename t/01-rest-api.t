@@ -12,8 +12,8 @@ SKIP: {
 
     my $index_path = $ENV{OPENSEARCH_INDEX};
     if ( !defined $index_path or !-d $index_path ) {
-        diag("set OPENSEARCH_INDEX to valid path to test Plack with KSx");
-        skip "set OPENSEARCH_INDEX to valid path to test Plack with KSx", 7;
+        diag("set OPENSEARCH_INDEX to valid path to test REST API");
+        skip "set OPENSEARCH_INDEX to valid path to test REST API", 7;
     }
 
     my $engine = Search::OpenSearch::Engine::KSx->new(

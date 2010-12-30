@@ -262,6 +262,9 @@ sub _get_swishdocpath_analyzer {
 sub _analyze_uri_string {
     my ( $self, $uri ) = @_;
     my $analyzer = $self->_get_swishdocpath_analyzer();
+
+    #warn "uri=$uri";
+
     if ( !$analyzer ) {
         return $uri;
     }
@@ -279,6 +282,9 @@ sub GET {
         field => 'swishdocpath',
         terms => [ $self->_analyze_uri_string($uri) ]
     );
+
+    #warn "q=" . $q->to_string();
+
     my $ks_searcher = $self->searcher->get_ks();
     my $hits = $ks_searcher->hits( query => $q );
 
