@@ -24,5 +24,5 @@ Revision history for Search-OpenSearch-Engine-KSx
 0.08    07 Jan 2011
     * add REST API support
 
-0.09    xxx
+0.09    19 June 2011
     * logger dependent on debug() flag true
