@@ -1,4 +1,4 @@
-Search-OpenSearch-Engine-KSx
+Search-OpenSearch-Engine-Lucy
 
 INSTALLATION
 
@@ -14,21 +14,21 @@ SUPPORT AND DOCUMENTATION
 After installing, you can find documentation for this module with the
 perldoc command.
 
-    perldoc Search::OpenSearch::Engine::KSx
+    perldoc Search::OpenSearch::Engine::Lucy
 
 You can also look for information at:
 
     RT, CPAN's request tracker
-        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-OpenSearch-Engine-KSx
+        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-OpenSearch-Engine-Lucy
 
     AnnoCPAN, Annotated CPAN documentation
-        http://annocpan.org/dist/Search-OpenSearch-Engine-KSx
+        http://annocpan.org/dist/Search-OpenSearch-Engine-Lucy
 
     CPAN Ratings
-        http://cpanratings.perl.org/d/Search-OpenSearch-Engine-KSx
+        http://cpanratings.perl.org/d/Search-OpenSearch-Engine-Lucy
 
     Search CPAN
-        http://search.cpan.org/dist/Search-OpenSearch-Engine-KSx/
+        http://search.cpan.org/dist/Search-OpenSearch-Engine-Lucy/
 
 
 COPYRIGHT AND LICENCE

@@ -11,10 +11,10 @@ if ( $MM_Version =~ /_/ )    # dev version
 }
 
 WriteMakefile(
-    NAME          => 'Search::OpenSearch::Engine::KSx',
+    NAME          => 'Search::OpenSearch::Engine::Lucy',
     AUTHOR        => q{Peter Karman <karman@cpan.org>},
-    VERSION_FROM  => 'lib/Search/OpenSearch/Engine/KSx.pm',
-    ABSTRACT_FROM => 'lib/Search/OpenSearch/Engine/KSx.pm',
+    VERSION_FROM  => 'lib/Search/OpenSearch/Engine/Lucy.pm',
+    ABSTRACT_FROM => 'lib/Search/OpenSearch/Engine/Lucy.pm',
     (   $MM_Version >= 6.3002 ? ( 'LICENSE' => 'perl' )
         : ()
     ),
@@ -22,10 +22,10 @@ WriteMakefile(
     PREREQ_PM => {
         'Test::More'         => 0,
         'Search::OpenSearch' => 0.13,
-        'SWISH::Prog::KSx'   => 0.17,
+        'SWISH::Prog::Lucy'   => 0.01,
     },
     dist => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean => { FILES => 'Search-OpenSearch-Engine-KSx-*' },
+    clean => { FILES => 'Search-OpenSearch-Engine-Lucy-*' },
     ( $MM_Version >= 6.48 ? ( MIN_PERL_VERSION => '5.8.3' ) : () ),
     ( $MM_Version >= 6.31 ? ( LICENSE          => 'perl' )  : () ),
     (   $MM_Version <= 6.44 ? ()
@@ -34,9 +34,9 @@ WriteMakefile(
                     license  => 'http://dev.perl.org/licenses/',
                     homepage => 'http://perl.peknet.com/',
                     bugtracker =>
-                        'http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-OpenSearch-Engine-KSx',
+                        'http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-OpenSearch-Engine-Lucy',
                     repository =>
-                        'http://svn.peknet.com/perl/Search-OpenSearch-Engine-KSx/',
+                        'http://svn.peknet.com/perl/Search-OpenSearch-Engine-Lucy/',
                 },
             }
         )

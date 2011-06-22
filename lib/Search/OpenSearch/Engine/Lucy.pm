@@ -1,22 +1,22 @@
-package Search::OpenSearch::Engine::KSx;
+package Search::OpenSearch::Engine::Lucy;
 use strict;
 use warnings;
 use Carp;
 use base qw( Search::OpenSearch::Engine );
-use SWISH::Prog::KSx::Indexer;
-use SWISH::Prog::KSx::Searcher;
+use SWISH::Prog::Lucy::Indexer;
+use SWISH::Prog::Lucy::Searcher;
 use SWISH::Prog::Doc;
-use KinoSearch::Object::BitVector;
-use KinoSearch::Search::HitCollector::BitCollector;
+use Lucy::Object::BitVector;
+use Lucy::Search::Collector::BitCollector;
 use Data::Dump qw( dump );
 use Scalar::Util qw( blessed );
 
-our $VERSION = '0.09';
+our $VERSION = '0.01';
 
 sub init_searcher {
     my $self     = shift;
     my $index    = $self->index or croak "index not defined";
-    my $searcher = SWISH::Prog::KSx::Searcher->new(
+    my $searcher = SWISH::Prog::Lucy::Searcher->new(
         invindex => $index,
         debug    => $self->debug,
     );
@@ -40,16 +40,16 @@ sub build_facets {
                 . dump( \@facet_names )
                 . " with sample_size=$sample_size" );
     }
-    my $searcher     = $self->searcher;
-    my $ks_searcher  = $searcher->{ks};
-    my $query_parser = $searcher->{qp};
-    my $bit_vec      = KinoSearch::Object::BitVector->new(
-        capacity => $ks_searcher->doc_max + 1 );
+    my $searcher      = $self->searcher;
+    my $lucy_searcher = $searcher->{lucy};
+    my $query_parser  = $searcher->{qp};
+    my $bit_vec       = KinoSearch::Object::BitVector->new(
+        capacity => $lucy_searcher->doc_max + 1 );
     my $collector = KinoSearch::Search::HitCollector::BitCollector->new(
         bit_vector => $bit_vec, );
 
-    $ks_searcher->collect(
-        query     => $query_parser->parse("$query")->as_ks_query(),
+    $lucy_searcher->collect(
+        query     => $query_parser->parse("$query")->as_lucy_query(),
         collector => $collector
     );
 
@@ -63,7 +63,7 @@ sub build_facets {
         $doc_id = $bit_vec->next_hit( $doc_id + 1 );
         last if $doc_id == -1;
         last if $sample_size and ++$count > $sample_size;
-        my $doc = $ks_searcher->fetch_doc($doc_id);
+        my $doc = $lucy_searcher->fetch_doc($doc_id);
         for my $name (@facet_names) {
 
             # unique-ify
@@ -181,7 +181,7 @@ sub init_indexer {
     # the Indexer wants only one. We take the first by default,
     # but a subclass could do more subtle logic here.
 
-    my $indexer = SWISH::Prog::KSx::Indexer->new(
+    my $indexer = SWISH::Prog::Lucy::Indexer->new(
         invindex => $self->index->[0],
         debug    => $self->debug,
     );
@@ -236,7 +236,7 @@ sub DELETE {
         };
     }
     my $indexer = $self->init_indexer();
-    $indexer->get_ks->delete_by_term(
+    $indexer->get_lucy->delete_by_term(
         field => 'swishdocpath',
         term  => $uri,
     );
@@ -280,16 +280,16 @@ sub GET {
     my $self = shift;
     my $uri = shift or croak "uri required";
 
-    # use internal KS searcher directly to avoid needing MetaName defined
-    my $q = KinoSearch::Search::PhraseQuery->new(
+    # use internal Lucy searcher directly to avoid needing MetaName defined
+    my $q = Lucy::Search::PhraseQuery->new(
         field => 'swishdocpath',
         terms => [ $self->_analyze_uri_string($uri) ]
     );
 
     #warn "q=" . $q->to_string();
 
-    my $ks_searcher = $self->searcher->get_ks();
-    my $hits = $ks_searcher->hits( query => $q );
+    my $lucy_searcher = $self->searcher->get_lucy();
+    my $hits = $lucy_searcher->hits( query => $q );
 
     #warn "$q total=" . $hits->total_hits();
     my $hitdoc = $hits->next;
@@ -326,7 +326,7 @@ __END__
 
 =head1 NAME
 
-Search::OpenSearch::Engine::KSx - KinoSearch server with OpenSearch results
+Search::OpenSearch::Engine::Lucy - Lucy server with OpenSearch results
 
 =head1 SYNOPSIS
 
@@ -334,11 +334,11 @@ Search::OpenSearch::Engine::KSx - KinoSearch server with OpenSearch results
 
 =head2 init_searcher
 
-Returns a SWISH::Prog::KSx::Searcher object.
+Returns a SWISH::Prog::Lucy::Searcher object.
 
 =head2 init_indexer
 
-Returns a SWISH::Prog::KSx::Indexer object (used by the REST API).
+Returns a SWISH::Prog::Lucy::Indexer object (used by the REST API).
 
 =head2 build_facets( I<query>, I<results> )
 
@@ -366,15 +366,15 @@ Peter Karman, C<< <karman at cpan.org> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-search-opensearch-engine-ksx at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Search-OpenSearch-Engine-KSx>.  I will be notified, and then you'll
+Please report any bugs or feature requests to C<bug-search-opensearch-engine-lucy at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Search-OpenSearch-Engine-Lucy>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Search::OpenSearch::Engine::KSx
+    perldoc Search::OpenSearch::Engine::Lucy
 
 
 You can also look for information at:
@@ -383,19 +383,19 @@ You can also look for information at:
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-OpenSearch-Engine-KSx>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-OpenSearch-Engine-Lucy>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Search-OpenSearch-Engine-KSx>
+L<http://annocpan.org/dist/Search-OpenSearch-Engine-Lucy>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Search-OpenSearch-Engine-KSx>
+L<http://cpanratings.perl.org/d/Search-OpenSearch-Engine-Lucy>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Search-OpenSearch-Engine-KSx/>
+L<http://search.cpan.org/dist/Search-OpenSearch-Engine-Lucy/>
 
 =back
 

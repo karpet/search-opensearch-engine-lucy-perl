@@ -4,7 +4,7 @@ use warnings;
 use Test::More tests => 7;
 use Data::Dump qw( dump );
 use JSON::XS;
-use Search::OpenSearch::Engine::KSx;
+use Search::OpenSearch::Engine::Lucy;
 
 my $debug = $ENV{PERL_DEBUG} || 0;
 
@@ -16,7 +16,7 @@ SKIP: {
         skip "set OPENSEARCH_INDEX to valid path to test REST API", 7;
     }
 
-    my $engine = Search::OpenSearch::Engine::KSx->new(
+    my $engine = Search::OpenSearch::Engine::Lucy->new(
         index  => [$index_path],
         facets => { names => [qw( topics people places orgs author )], },
         fields => [qw( topics people places orgs author )],

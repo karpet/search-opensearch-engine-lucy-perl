@@ -1,5 +1,5 @@
 Changes
-lib/Search/OpenSearch/Engine/KSx.pm
+lib/Search/OpenSearch/Engine/Lucy.pm
 Makefile.PL
 MANIFEST
 README
