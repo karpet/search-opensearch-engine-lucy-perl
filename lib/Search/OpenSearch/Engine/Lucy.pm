@@ -305,7 +305,7 @@ sub GET {
     my $fields = $self->fields;
     for my $field (@$fields) {
         my $str = $hitdoc->{$field};
-        $doc{$field} = [ split( m/\003/, $str ) ];
+        $doc{$field} = [ split( m/\003/, defined $str ? $str : "" ) ];
     }
     $doc{title}   = $hitdoc->{swishtitle};
     $doc{summary} = $hitdoc->{swishdescription};
