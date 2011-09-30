@@ -3,3 +3,6 @@ Revision history for Search-OpenSearch-Engine-Lucy
 0.01    21 June 2011
         * Initial port of KSx version.
 
+0.02    29 Sept 2011
+        * fix edge case on PUT where index not yet created.
+

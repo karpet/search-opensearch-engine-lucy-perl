@@ -11,7 +11,7 @@ use Lucy::Search::Collector::BitCollector;
 use Data::Dump qw( dump );
 use Scalar::Util qw( blessed );
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub init_searcher {
     my $self     = shift;
@@ -190,15 +190,20 @@ sub init_indexer {
 
 # PUT only if it does not yet exist
 sub PUT {
-    my $self   = shift;
-    my $req    = shift or croak "request required";
-    my $doc    = $self->_massage_rest_req_into_doc($req);
-    my $uri    = $doc->url;
-    my $exists = $self->GET($uri);
-    if ( $exists->{code} == 200 ) {
-        return { code => 409, msg => "Document $uri already exists" };
-    }
+    my $self = shift;
+    my $req  = shift or croak "request required";
+    my $doc  = $self->_massage_rest_req_into_doc($req);
+    my $uri  = $doc->url;
+
+    # edge case: index might not yet exist.
+    my $exists;
     my $indexer = $self->init_indexer();
+    if ( -s $indexer->invindex->path->file('swish.xml') ) {
+        $exists = $self->GET($uri);
+        if ( $exists->{code} == 200 ) {
+            return { code => 409, msg => "Document $uri already exists" };
+        }
+    }
     $indexer->process($doc);
     my $total = $indexer->finish();
     $exists = $self->GET( $doc->url );
