@@ -5,6 +5,7 @@ use Carp;
 use base qw( Search::OpenSearch::Engine );
 use SWISH::Prog::Lucy::Indexer;
 use SWISH::Prog::Lucy::Searcher;
+use SWISH::Prog::Aggregator;
 use SWISH::Prog::Doc;
 use Lucy::Object::BitVector;
 use Lucy::Search::Collector::BitCollector;
@@ -143,33 +144,40 @@ sub _massage_rest_req_into_doc {
     my ( $self, $req ) = @_;
 
     #dump $req;
+    my $doc;
 
     if ( !blessed($req) ) {
-        return SWISH::Prog::Doc->new(
+        $doc = SWISH::Prog::Doc->new(
             version => 3,
             %$req
         );
     }
+    else {
 
-    #dump $req->headers;
+        #dump $req->headers;
 
-    # $req should act like a HTTP::Request object.
-    my %args = (
-        version => 3,
-        url     => $req->uri->path,        # TODO test
-        content => $req->content,
-        size    => $req->content_length,
-        type    => $req->content_type,
+        # $req should act like a HTTP::Request object.
+        my %args = (
+            version => 3,
+            url     => $req->uri->path,        # TODO test
+            content => $req->content,
+            size    => $req->content_length,
+            type    => $req->content_type,
 
-        # type
-        # action
-        # parser
-        # modtime
-    );
+            # type
+            # action
+            # parser
+            # modtime
+        );
 
-    #dump \%args;
+        #dump \%args;
 
-    my $doc = SWISH::Prog::Doc->new(%args);
+        $doc = SWISH::Prog::Doc->new(%args);
+
+    }
+
+    my $aggregator = SWISH::Prog::Aggregator->new();
+    $aggregator->swish_filter($doc);
 
     return $doc;
 }
