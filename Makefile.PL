@@ -21,8 +21,9 @@ WriteMakefile(
     PL_FILES  => {},
     PREREQ_PM => {
         'Test::More'         => 0,
-        'Search::OpenSearch' => 0.13,
-        'SWISH::Prog::Lucy'   => 0.01,
+        'Search::OpenSearch' => 0.14,
+        'SWISH::Prog::Lucy'  => 0.05,
+        'SWISH::Prog'        => 0.53,
     },
     dist => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Search-OpenSearch-Engine-Lucy-*' },
