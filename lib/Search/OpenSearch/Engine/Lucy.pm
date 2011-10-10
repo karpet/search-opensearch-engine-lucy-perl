@@ -176,7 +176,10 @@ sub _massage_rest_req_into_doc {
 
     }
 
-    my $aggregator = SWISH::Prog::Aggregator->new();
+    # use set_parser_from_type so that SWISH::3 does the Right Thing
+    # instead of looking at the original mime-type.
+    my $aggregator
+        = SWISH::Prog::Aggregator->new( set_parser_from_type => 1 );
     $aggregator->swish_filter($doc);
 
     return $doc;
