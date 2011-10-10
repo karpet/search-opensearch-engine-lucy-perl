@@ -6,6 +6,6 @@ Revision history for Search-OpenSearch-Engine-Lucy
 0.02    29 Sept 2011
         * fix edge case on PUT where index not yet created.
 
-0.03    xxx
+0.03    09 Oct 2011
         * support all file types via SWISH::Filter
 
