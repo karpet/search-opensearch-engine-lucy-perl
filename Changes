@@ -9,3 +9,7 @@ Revision history for Search-OpenSearch-Engine-Lucy
 0.03    09 Oct 2011
         * support all file types via SWISH::Filter
 
+0.04    xxx
+        * fields now optional in config. If not defined, will be read
+          from searcher->get_propnames().
+

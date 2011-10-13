@@ -22,7 +22,7 @@ WriteMakefile(
     PREREQ_PM => {
         'Test::More'         => 0,
         'Search::OpenSearch' => 0.14,
-        'SWISH::Prog::Lucy'  => 0.05,
+        'SWISH::Prog::Lucy'  => 0.07,
         'SWISH::Prog'        => 0.53,
     },
     dist => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
@@ -33,11 +33,11 @@ WriteMakefile(
         : ( META_MERGE => {
                 resources => {
                     license  => 'http://dev.perl.org/licenses/',
-                    homepage => 'http://perl.peknet.com/',
+                    homepage => 'https://github.com/karpet/search-opensearch-engine-lucy-perl',
                     bugtracker =>
                         'http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-OpenSearch-Engine-Lucy',
                     repository =>
-                        'http://svn.peknet.com/perl/Search-OpenSearch-Engine-Lucy/',
+                        'git://github.com/karpet/search-opensearch-engine-lucy-perl.git',
                 },
             }
         )

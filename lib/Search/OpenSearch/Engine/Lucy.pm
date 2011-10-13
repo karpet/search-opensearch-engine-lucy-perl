@@ -12,7 +12,7 @@ use Lucy::Search::Collector::BitCollector;
 use Data::Dump qw( dump );
 use Scalar::Util qw( blessed );
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub init_searcher {
     my $self     = shift;
@@ -21,6 +21,9 @@ sub init_searcher {
         invindex => $index,
         debug    => $self->debug,
     );
+    if ( !$self->fields ) {
+        $self->fields( $searcher->get_propnames );
+    }
     return $searcher;
 }
 
