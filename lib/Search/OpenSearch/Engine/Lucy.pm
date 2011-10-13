@@ -12,7 +12,7 @@ use Lucy::Search::Collector::BitCollector;
 use Data::Dump qw( dump );
 use Scalar::Util qw( blessed );
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 sub init_searcher {
     my $self     = shift;
@@ -20,6 +20,7 @@ sub init_searcher {
     my $searcher = SWISH::Prog::Lucy::Searcher->new(
         invindex => $index,
         debug    => $self->debug,
+        %{ $self->searcher_config },
     );
     if ( !$self->fields ) {
         $self->fields( $searcher->get_propnames );
@@ -198,6 +199,7 @@ sub init_indexer {
     my $indexer = SWISH::Prog::Lucy::Indexer->new(
         invindex => $self->index->[0],
         debug    => $self->debug,
+        %{ $self->indexer_config },
     );
     return $indexer;
 }
