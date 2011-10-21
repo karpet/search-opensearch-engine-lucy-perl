@@ -16,4 +16,5 @@ Revision history for Search-OpenSearch-Engine-Lucy
 0.05    xxx
         * support for Search::OpenSearch::Engine searcher_config and
           indexer_config.
+        * fix class names left from KinoSearch port
 
