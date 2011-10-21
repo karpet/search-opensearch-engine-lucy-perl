@@ -50,7 +50,7 @@ sub build_facets {
     my $query_parser  = $searcher->{qp};
     my $bit_vec       = Lucy::Object::BitVector->new(
         capacity => $lucy_searcher->doc_max + 1 );
-    my $collector = Lucy::Search::HitCollector::BitCollector->new(
+    my $collector = Lucy::Search::Collector::BitCollector->new(
         bit_vector => $bit_vec, );
 
     $lucy_searcher->collect(
