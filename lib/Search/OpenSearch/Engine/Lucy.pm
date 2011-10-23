@@ -351,6 +351,49 @@ Search::OpenSearch::Engine::Lucy - Lucy server with OpenSearch results
 
 =head1 SYNOPSIS
 
+ use Search::OpenSearch::Engine::Lucy;
+ my $engine = Search::OpenSearch::Engine::Lucy->new(
+    index       => [qw( path/to/index1 path/to/index2 )],
+    facets      => {
+        names       => [qw( color size flavor )],
+        sample_size => 10_000,
+    },
+    fields      => [qw( color size flavor )],   # result attributes in response
+    indexer_config  => {
+        somekey => somevalue,
+    },
+    searcher_config => {
+        anotherkey => anothervalue,
+    },
+    cache           => CHI->new(
+        driver           => 'File',
+        dir_create_mode  => 0770,
+        file_create_mode => 0660,
+        root_dir         => "/tmp/opensearch_cache",
+    ),
+    cache_ttl       => 3600,
+    do_not_hilite   => [qw( color )],
+    snipper_config  => { as_sentences => 1 },        # see Search::Tools::Snipper
+    hiliter_config  => { class => 'h', tag => 'b' }, # see Search::Tools::HiLiter
+    parser_config   => {},                           # see Search::Query::Parser
+    
+ );
+ my $response = $engine->search(
+    q           => 'quick brown fox',   # query
+    s           => 'rank desc',         # sort order
+    o           => 0,                   # offset
+    p           => 25,                  # page size
+    h           => 1,                   # highlight query terms in results
+    c           => 0,                   # count total only (same as f=0 r=0)
+    L           => 'field|low|high',    # limit results to inclusive range
+    f           => 1,                   # include facets
+    r           => 1,                   # include results
+    t           => 'XML',               # or JSON
+    L           => 'http://yourdomain.foo/opensearch/',
+    b           => 'AND',               # or OR
+ );
+ print $response;
+
 =head1 METHODS
 
 =head2 init_searcher
