@@ -13,7 +13,7 @@ Revision history for Search-OpenSearch-Engine-Lucy
         * fields now optional in config. If not defined, will be read
           from searcher->get_propnames().
 
-0.05    xxx
+0.05    22 Oct 2011
         * support for Search::OpenSearch::Engine searcher_config and
           indexer_config.
         * fix class names left from KinoSearch port
