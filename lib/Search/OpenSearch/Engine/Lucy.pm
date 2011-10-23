@@ -389,7 +389,7 @@ Search::OpenSearch::Engine::Lucy - Lucy server with OpenSearch results
     f           => 1,                   # include facets
     r           => 1,                   # include results
     t           => 'XML',               # or JSON
-    L           => 'http://yourdomain.foo/opensearch/',
+    u           => 'http://yourdomain.foo/opensearch/',
     b           => 'AND',               # or OR
  );
  print $response;

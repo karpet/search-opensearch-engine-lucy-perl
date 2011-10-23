@@ -23,7 +23,7 @@ WriteMakefile(
         'Test::More'         => 0,
         'Search::OpenSearch' => 0.15,
         'SWISH::Prog::Lucy'  => 0.07,
-        'SWISH::Prog'        => 0.53,
+        'SWISH::Prog'        => 0.54,
     },
     dist => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Search-OpenSearch-Engine-Lucy-*' },
