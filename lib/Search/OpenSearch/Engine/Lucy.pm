@@ -5,14 +5,28 @@ use Carp;
 use base qw( Search::OpenSearch::Engine );
 use SWISH::Prog::Lucy::Indexer;
 use SWISH::Prog::Lucy::Searcher;
-use SWISH::Prog::Aggregator;
 use SWISH::Prog::Doc;
 use Lucy::Object::BitVector;
 use Lucy::Search::Collector::BitCollector;
 use Data::Dump qw( dump );
 use Scalar::Util qw( blessed );
+use Module::Load;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
+
+__PACKAGE__->mk_accessors(
+    qw(
+        aggregator_class
+        )
+);
+
+sub init {
+    my $self = shift;
+    $self->SUPER::init(@_);
+    $self->{aggregator_class} ||= 'SWISH::Prog::Aggregator';
+    load $self->{aggregator_class};
+    return $self;
+}
 
 sub init_searcher {
     my $self     = shift;
@@ -50,8 +64,9 @@ sub build_facets {
     my $query_parser  = $searcher->{qp};
     my $bit_vec       = Lucy::Object::BitVector->new(
         capacity => $lucy_searcher->doc_max + 1 );
-    my $collector = Lucy::Search::Collector::BitCollector->new(
-        bit_vector => $bit_vec, );
+    my $collector
+        = Lucy::Search::Collector::BitCollector->new( bit_vector => $bit_vec,
+        );
 
     $lucy_searcher->collect(
         query     => $query_parser->parse("$query")->as_lucy_query(),
@@ -183,7 +198,7 @@ sub _massage_rest_req_into_doc {
     # use set_parser_from_type so that SWISH::3 does the Right Thing
     # instead of looking at the original mime-type.
     my $aggregator
-        = SWISH::Prog::Aggregator->new( set_parser_from_type => 1 );
+        = $self->aggregator_class->new( set_parser_from_type => 1 );
     $aggregator->swish_filter($doc);
 
     return $doc;
@@ -365,6 +380,7 @@ Search::OpenSearch::Engine::Lucy - Lucy server with OpenSearch results
     searcher_config => {
         anotherkey => anothervalue,
     },
+    aggregator_class => 'MyAggregator', # defaults to SWISH::Prog::Aggregator
     cache           => CHI->new(
         driver           => 'File',
         dir_create_mode  => 0770,
@@ -395,6 +411,16 @@ Search::OpenSearch::Engine::Lucy - Lucy server with OpenSearch results
  print $response;
 
 =head1 METHODS
+
+=head2 aggregator_class
+
+Passed as param to new(). This class is used for filtering
+incoming docs via the aggregator's swish_filter() method.
+
+=head2 init
+
+Overrides base method to load the I<aggregator_class> and other
+Engine-specific construction tasks.
 
 =head2 init_searcher
 

@@ -18,3 +18,8 @@ Revision history for Search-OpenSearch-Engine-Lucy
           indexer_config.
         * fix class names left from KinoSearch port
 
+0.06    xxx
+        * refactor to add aggregator_class method, for overriding
+          the default behaviour of SWISH::Prog::Aggregator->swish_filter()
+
+
