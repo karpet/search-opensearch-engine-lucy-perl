@@ -22,4 +22,6 @@ Revision history for Search-OpenSearch-Engine-Lucy
         * refactor to add aggregator_class method, for overriding
           the default behaviour of SWISH::Prog::Aggregator->swish_filter()
 
+0.07    2 April 2012
+        * declare JSON as a dependency (RT #76252)
 

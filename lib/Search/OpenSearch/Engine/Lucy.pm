@@ -12,7 +12,7 @@ use Data::Dump qw( dump );
 use Scalar::Util qw( blessed );
 use Module::Load;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 __PACKAGE__->mk_accessors(
     qw(

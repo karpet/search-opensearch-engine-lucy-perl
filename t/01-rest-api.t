@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Test::More tests => 7;
 use Data::Dump qw( dump );
-use JSON::XS;
+use JSON;
 use Search::OpenSearch::Engine::Lucy;
 
 my $debug = $ENV{PERL_DEBUG} || 0;
