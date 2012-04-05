@@ -27,3 +27,7 @@ Revision history for Search-OpenSearch-Engine-Lucy
 
 0.08    4 April 2012
         * fix bug where a failed PUT failed to release lock on invindex
+
+0.09    4 April 2012
+        * fix the 0.08 fix
+

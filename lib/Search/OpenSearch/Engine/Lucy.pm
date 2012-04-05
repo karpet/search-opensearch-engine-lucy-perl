@@ -13,7 +13,7 @@ use Scalar::Util qw( blessed );
 use Module::Load;
 use Path::Class::Dir;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -230,7 +230,9 @@ sub PUT {
     # edge case: index might not yet exist.
     my $exists;
     my $index = $self->index or croak "index not defined";
-    if ( -d $index && -s Path::Class::Dir->new($index)->file('swish.xml') ) {
+    if (   -d $index->[0]
+        && -s Path::Class::Dir->new( $index->[0] )->file('swish.xml') )
+    {
         $exists = $self->GET($uri);
         if ( $exists->{code} == 200 ) {
             return { code => 409, msg => "Document $uri already exists" };
