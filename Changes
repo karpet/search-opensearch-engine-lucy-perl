@@ -25,3 +25,5 @@ Revision history for Search-OpenSearch-Engine-Lucy
 0.07    2 April 2012
         * declare JSON as a dependency (RT #76252)
 
+0.08    4 April 2012
+        * fix bug where a failed PUT failed to release lock on invindex

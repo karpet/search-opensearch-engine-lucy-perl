@@ -15,7 +15,8 @@ WriteMakefile(
     AUTHOR        => q{Peter Karman <karman@cpan.org>},
     VERSION_FROM  => 'lib/Search/OpenSearch/Engine/Lucy.pm',
     ABSTRACT_FROM => 'lib/Search/OpenSearch/Engine/Lucy.pm',
-    (   $MM_Version >= 6.3002 ? ( 'LICENSE' => 'perl' )
+    (   $MM_Version >= 6.3002
+        ? ( 'LICENSE' => 'perl' )
         : ()
     ),
     PL_FILES  => {},
@@ -26,16 +27,19 @@ WriteMakefile(
         'SWISH::Prog'        => 0.54,
         'Module::Load'       => 0,
         'JSON'               => 2.00,
+        'Path::Class'        => 0,   # required by SWISH::Prog but be explicit
     },
     dist => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Search-OpenSearch-Engine-Lucy-*' },
     ( $MM_Version >= 6.48 ? ( MIN_PERL_VERSION => '5.8.3' ) : () ),
     ( $MM_Version >= 6.31 ? ( LICENSE          => 'perl' )  : () ),
-    (   $MM_Version <= 6.44 ? ()
+    (   $MM_Version <= 6.44
+        ? ()
         : ( META_MERGE => {
                 resources => {
-                    license  => 'http://dev.perl.org/licenses/',
-                    homepage => 'https://github.com/karpet/search-opensearch-engine-lucy-perl',
+                    license => 'http://dev.perl.org/licenses/',
+                    homepage =>
+                        'https://github.com/karpet/search-opensearch-engine-lucy-perl',
                     bugtracker =>
                         'http://rt.cpan.org/NoAuth/Bugs.html?Dist=Search-OpenSearch-Engine-Lucy',
                     repository =>

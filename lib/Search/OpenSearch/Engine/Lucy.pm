@@ -11,8 +11,9 @@ use Lucy::Search::Collector::BitCollector;
 use Data::Dump qw( dump );
 use Scalar::Util qw( blessed );
 use Module::Load;
+use Path::Class::Dir;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -228,13 +229,15 @@ sub PUT {
 
     # edge case: index might not yet exist.
     my $exists;
-    my $indexer = $self->init_indexer();
-    if ( -s $indexer->invindex->path->file('swish.xml') ) {
+    my $index = $self->index or croak "index not defined";
+    if ( -d $index && -s Path::Class::Dir->new($index)->file('swish.xml') ) {
         $exists = $self->GET($uri);
         if ( $exists->{code} == 200 ) {
             return { code => 409, msg => "Document $uri already exists" };
         }
     }
+
+    my $indexer = $self->init_indexer();
     $indexer->process($doc);
     my $total = $indexer->finish();
     $exists = $self->GET( $doc->url );
