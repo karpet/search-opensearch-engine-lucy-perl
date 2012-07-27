@@ -13,7 +13,7 @@ use Scalar::Util qw( blessed );
 use Module::Load;
 use Path::Class::Dir;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 __PACKAGE__->mk_accessors(
     qw(
