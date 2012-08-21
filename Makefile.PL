@@ -22,7 +22,7 @@ WriteMakefile(
     PL_FILES  => {},
     PREREQ_PM => {
         'Test::More'         => 0,
-        'Search::OpenSearch' => 0.15,
+        'Search::OpenSearch' => 0.18,
         'SWISH::Prog::Lucy'  => 0.07,
         'SWISH::Prog'        => 0.54,
         'Module::Load'       => 0,

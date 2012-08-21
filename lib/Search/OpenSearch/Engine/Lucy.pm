@@ -13,7 +13,7 @@ use Scalar::Util qw( blessed );
 use Module::Load;
 use Path::Class::Dir;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -25,6 +25,7 @@ sub init {
     my $self = shift;
     $self->SUPER::init(@_);
     $self->{aggregator_class} ||= 'SWISH::Prog::Aggregator';
+    $self->{array_field_values} = 1;
     load $self->{aggregator_class};
     return $self;
 }
@@ -111,51 +112,6 @@ sub build_facets {
         }
     }
     return \%facet_struct;
-}
-
-sub process_result {
-    my ( $self, %args ) = @_;
-    my $result       = $args{result};
-    my $hiliter      = $args{hiliter};
-    my $XMLer        = $args{XMLer};
-    my $snipper      = $args{snipper};
-    my $fields       = $args{fields};
-    my $apply_hilite = $args{apply_hilite};
-
-    my $title   = $XMLer->escape( $result->title   || '' );
-    my $summary = $XMLer->escape( $result->summary || '' );
-
-    # \003 is the record-delimiter in Swish3
-    # we ignore it for title and summary, but split
-    # all other fields into an array to preserve
-    # multiple values.
-    $title   =~ s/\003/ /g;
-    $summary =~ s/\003/ /g;
-
-    my %res = (
-        score   => $result->score,
-        uri     => $result->uri,
-        mtime   => $result->mtime,
-        title   => ( $apply_hilite ? $hiliter->light($title) : $title ),
-        summary => (
-              $apply_hilite
-            ? $hiliter->light( $snipper->snip($summary) )
-            : $summary
-        ),
-    );
-    for my $field (@$fields) {
-        my $str = $XMLer->escape( $result->get_property($field) || '' );
-        if ( !$apply_hilite or $self->no_hiliting($field) ) {
-            $res{$field} = [ split( m/\003/, $str ) ];
-        }
-        else {
-            $res{$field} = [
-                map { $hiliter->light( $snipper->snip($_) ) }
-                    split( m/\003/, $str )
-            ];
-        }
-    }
-    return \%res;
 }
 
 sub has_rest_api {1}
