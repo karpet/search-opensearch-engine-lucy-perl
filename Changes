@@ -33,3 +33,4 @@ Revision history for Search-OpenSearch-Engine-Lucy
 
 0.10    xxx
         * add mem leak tests
+        * require SOS 0.18 for array_field_values
