@@ -5,5 +5,6 @@ MANIFEST
 README
 t/00-load.t
 t/01-rest-api.t
+t/03-mem-leak.t
 t/pod-coverage.t
 t/pod.t
