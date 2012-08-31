@@ -12,13 +12,18 @@ use Data::Dump qw( dump );
 use Scalar::Util qw( blessed );
 use Module::Load;
 use Path::Class::Dir;
+use SWISH::3 qw(:constants);
 
-our $VERSION = '0.10';
+our $VERSION = '0.10_01';
 
 __PACKAGE__->mk_accessors(
     qw(
         aggregator_class
+        autocommit
         )
+);
+
+use Rose::Object::MakeMethods::Generic ( 'scalar --get_set_init' => 'indexer',
 );
 
 sub init {
@@ -26,6 +31,7 @@ sub init {
     $self->SUPER::init(@_);
     $self->{aggregator_class} ||= 'SWISH::Prog::Aggregator';
     $self->{array_field_values} = 1;
+    $self->{autocommit} = 1 unless defined $self->{autocommit};
     load $self->{aggregator_class};
     return $self;
 }
@@ -116,6 +122,10 @@ sub build_facets {
 
 sub has_rest_api {1}
 
+sub get_allowed_rest_methods {
+    return qw( GET POST PUT DELETE COMMIT ROLLBACK );
+}
+
 sub _massage_rest_req_into_doc {
     my ( $self, $req ) = @_;
 
@@ -187,7 +197,8 @@ sub PUT {
     my $exists;
     my $index = $self->index or croak "index not defined";
     if (   -d $index->[0]
-        && -s Path::Class::Dir->new( $index->[0] )->file('swish.xml') )
+        && -s Path::Class::Dir->new( $index->[0] )
+        ->file( SWISH_HEADER_FILE() ) )
     {
         $exists = $self->GET($uri);
         if ( $exists->{code} == 200 ) {
@@ -195,8 +206,17 @@ sub PUT {
         }
     }
 
-    my $indexer = $self->init_indexer();
+    my $indexer
+        = $self->autocommit
+        ? $self->init_indexer()
+        : $self->indexer();
     $indexer->process($doc);
+
+    if ( !$self->autocommit ) {
+        my $total = 1;
+        return { code => 202, total => 1, };
+    }
+
     my $total = $indexer->finish();
     $exists = $self->GET( $doc->url );
     if ( $exists->{code} != 200 ) {
@@ -207,12 +227,21 @@ sub PUT {
 
 # POST allows new and updates
 sub POST {
-    my $self    = shift;
-    my $req     = shift or croak "request required";
-    my $doc     = $self->_massage_rest_req_into_doc($req);
-    my $uri     = $doc->url;
-    my $indexer = $self->init_indexer();
+    my $self = shift;
+    my $req  = shift or croak "request required";
+    my $doc  = $self->_massage_rest_req_into_doc($req);
+    my $uri  = $doc->url;
+    my $indexer
+        = $self->autocommit
+        ? $self->init_indexer()
+        : $self->indexer();
     $indexer->process($doc);
+
+    if ( !$self->autocommit ) {
+        my $total = 1;
+        return { code => 202, total => 1, };
+    }
+
     my $total  = $indexer->finish();
     my $exists = $self->GET( $doc->url );
 
@@ -220,6 +249,37 @@ sub POST {
         return { code => 500, msg => 'Failed to POST doc' };
     }
     return { code => 200, total => $total, doc => $exists->{doc} };
+}
+
+sub COMMIT {
+    my $self = shift;
+    if ( $self->autocommit ) {
+        return { code => 400 };
+    }
+    my $indexer = $self->indexer();
+    if ( my $total = $indexer->count() ) {
+        $indexer->finish();
+
+        # MUST invalidate current indexer
+        $self->indexer(undef);
+
+        return { code => 200, total => $total };
+    }
+    else {
+        return { code => 204 };
+    }
+}
+
+sub ROLLBACK {
+    my $self = shift;
+    if ( !$self->autocommit ) {
+        my $reverted = $self->indexer->count;
+        $self->indexer(undef);
+        return { code => 200, total => $reverted };
+    }
+    else {
+        return { code => 400 };
+    }
 }
 
 sub DELETE {
@@ -232,15 +292,21 @@ sub DELETE {
             msg  => "$uri cannot be deleted because it does not exist"
         };
     }
-    my $indexer = $self->init_indexer();
+    my $indexer
+        = $self->autocommit
+        ? $self->init_indexer()
+        : $self->indexer;
     $indexer->get_lucy->delete_by_term(
         field => 'swishdocpath',
         term  => $uri,
     );
+
+    if ( !$self->autocommit ) {
+        return { code => 202 };
+    }
+
     $indexer->finish();
-    return {
-        code => 204,    # no content in response
-    };
+    return { code => 200, };
 }
 
 sub _get_swishdocpath_analyzer {
@@ -378,6 +444,16 @@ Search::OpenSearch::Engine::Lucy - Lucy server with OpenSearch results
 Passed as param to new(). This class is used for filtering
 incoming docs via the aggregator's swish_filter() method.
 
+=head2 autocommit( 0 | 1 )
+
+Can set this in new().
+
+If true, a new indexer is spawned via init_indexer() for
+each POST, PUT or DELETE.
+
+If false, the same indexer is re-used in POST, PUT or DELETE
+calls, until COMMIT or ROLLBACK is called.
+
 =head2 init
 
 Overrides base method to load the I<aggregator_class> and other
@@ -403,6 +479,14 @@ Overrides base method to preserve multi-value fields as arrays.
 
 Returns true.
 
+=head2 get_allowed_rest_methods
+
+Returns array (not an array ref) of supported HTTP method names.
+These correspond to the UPPERCASE method names below.
+
+B<NOTE> that COMMIT and ROLLBACK are not official HTTP/1.1 method
+names.
+
 =head2 PUT( I<doc> )
 
 =head2 POST( I<doc> )
@@ -410,6 +494,14 @@ Returns true.
 =head2 DELETE( I<uri> )
 
 =head2 GET( I<uri> )
+
+=head2 COMMIT
+
+If autocommit is false, use this method to conclude a transaction.
+
+=head2 ROLLBACK
+
+If autocommit is false, use this method to abort a transaction.
 
 =head1 AUTHOR
 
