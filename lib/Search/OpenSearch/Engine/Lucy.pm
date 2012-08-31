@@ -446,13 +446,15 @@ incoming docs via the aggregator's swish_filter() method.
 
 =head2 autocommit( 0 | 1 )
 
-Can set this in new().
+Set this in new().
 
 If true, a new indexer is spawned via init_indexer() for
 each POST, PUT or DELETE.
 
 If false, the same indexer is re-used in POST, PUT or DELETE
 calls, until COMMIT or ROLLBACK is called.
+
+Default is true (on).
 
 =head2 init
 
