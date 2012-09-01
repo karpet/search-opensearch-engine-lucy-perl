@@ -122,7 +122,7 @@ sub build_facets {
 
 sub has_rest_api {1}
 
-sub get_allowed_rest_methods {
+sub get_allowed_http_methods {
     return qw( GET POST PUT DELETE COMMIT ROLLBACK );
 }
 
@@ -481,7 +481,7 @@ Overrides base method to preserve multi-value fields as arrays.
 
 Returns true.
 
-=head2 get_allowed_rest_methods
+=head2 get_allowed_http_methods
 
 Returns array (not an array ref) of supported HTTP method names.
 These correspond to the UPPERCASE method names below.
