@@ -14,7 +14,7 @@ use Module::Load;
 use Path::Class::Dir;
 use SWISH::3 qw(:constants);
 
-our $VERSION = '0.10_01';
+our $VERSION = '0.11';
 
 __PACKAGE__->mk_accessors(
     qw(

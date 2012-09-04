@@ -35,5 +35,5 @@ Revision history for Search-OpenSearch-Engine-Lucy
         * add mem leak tests
         * require SOS 0.18 for array_field_values
 
-0.11    xx
+0.11    3 Sept 2012
         * add transaction support with COMMIT and ROLLBACK and auto_commit().
