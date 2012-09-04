@@ -19,7 +19,7 @@ our $VERSION = '0.10_01';
 __PACKAGE__->mk_accessors(
     qw(
         aggregator_class
-        autocommit
+        auto_commit
         )
 );
 
@@ -31,7 +31,7 @@ sub init {
     $self->SUPER::init(@_);
     $self->{aggregator_class} ||= 'SWISH::Prog::Aggregator';
     $self->{array_field_values} = 1;
-    $self->{autocommit} = 1 unless defined $self->{autocommit};
+    $self->{auto_commit} = 1 unless defined $self->{auto_commit};
     load $self->{aggregator_class};
     return $self;
 }
@@ -207,12 +207,12 @@ sub PUT {
     }
 
     my $indexer
-        = $self->autocommit
+        = $self->auto_commit
         ? $self->init_indexer()
         : $self->indexer();
     $indexer->process($doc);
 
-    if ( !$self->autocommit ) {
+    if ( !$self->auto_commit ) {
         my $total = 1;
         return { code => 202, total => 1, };
     }
@@ -232,12 +232,12 @@ sub POST {
     my $doc  = $self->_massage_rest_req_into_doc($req);
     my $uri  = $doc->url;
     my $indexer
-        = $self->autocommit
+        = $self->auto_commit
         ? $self->init_indexer()
         : $self->indexer();
     $indexer->process($doc);
 
-    if ( !$self->autocommit ) {
+    if ( !$self->auto_commit ) {
         my $total = 1;
         return { code => 202, total => 1, };
     }
@@ -253,7 +253,7 @@ sub POST {
 
 sub COMMIT {
     my $self = shift;
-    if ( $self->autocommit ) {
+    if ( $self->auto_commit ) {
         return { code => 400 };
     }
     my $indexer = $self->indexer();
@@ -272,8 +272,9 @@ sub COMMIT {
 
 sub ROLLBACK {
     my $self = shift;
-    if ( !$self->autocommit ) {
+    if ( !$self->auto_commit ) {
         my $reverted = $self->indexer->count;
+        $self->indexer->abort();
         $self->indexer(undef);
         return { code => 200, total => $reverted };
     }
@@ -293,7 +294,7 @@ sub DELETE {
         };
     }
     my $indexer
-        = $self->autocommit
+        = $self->auto_commit
         ? $self->init_indexer()
         : $self->indexer;
     $indexer->get_lucy->delete_by_term(
@@ -301,7 +302,7 @@ sub DELETE {
         term  => $uri,
     );
 
-    if ( !$self->autocommit ) {
+    if ( !$self->auto_commit ) {
         return { code => 202 };
     }
 
@@ -444,7 +445,7 @@ Search::OpenSearch::Engine::Lucy - Lucy server with OpenSearch results
 Passed as param to new(). This class is used for filtering
 incoming docs via the aggregator's swish_filter() method.
 
-=head2 autocommit( 0 | 1 )
+=head2 auto_commit( 0 | 1 )
 
 Set this in new().
 
@@ -499,11 +500,11 @@ names.
 
 =head2 COMMIT
 
-If autocommit is false, use this method to conclude a transaction.
+If auto_commit is false, use this method to conclude a transaction.
 
 =head2 ROLLBACK
 
-If autocommit is false, use this method to abort a transaction.
+If auto_commit is false, use this method to abort a transaction.
 
 =head1 AUTHOR
 

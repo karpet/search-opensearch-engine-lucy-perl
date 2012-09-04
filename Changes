@@ -36,4 +36,4 @@ Revision history for Search-OpenSearch-Engine-Lucy
         * require SOS 0.18 for array_field_values
 
 0.11    xx
-        * add transaction support with COMMIT and ROLLBACK and autocommit().
+        * add transaction support with COMMIT and ROLLBACK and auto_commit().

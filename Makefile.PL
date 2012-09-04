@@ -23,7 +23,7 @@ WriteMakefile(
     PREREQ_PM => {
         'Test::More'         => 0,
         'Search::OpenSearch' => 0.18,
-        'SWISH::Prog::Lucy'  => 0.07,
+        'SWISH::Prog::Lucy'  => 0.11,
         'SWISH::Prog'        => 0.54,
         'Module::Load'       => 0,
         'JSON'               => 2.00,
