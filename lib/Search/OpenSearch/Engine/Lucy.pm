@@ -14,7 +14,7 @@ use Module::Load;
 use Path::Class::Dir;
 use SWISH::3 qw(:constants);
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -123,6 +123,10 @@ sub build_facets {
 sub has_rest_api {1}
 
 sub get_allowed_http_methods {
+    my $self = shift;
+    if ( $self->auto_commit ) {
+        return qw( GET POST PUT DELETE );
+    }
     return qw( GET POST PUT DELETE COMMIT ROLLBACK );
 }
 
@@ -319,7 +323,7 @@ sub _get_swishdocpath_analyzer {
 
         # field is not defined as a MetaName, just a PropertyName,
         # so we do not analyze it
-        $self->{_uri_analyzer} = 0;            # exists but false
+        $self->{_uri_analyzer} = 0;    # exists but false
         return 0;
     }
     $self->{_uri_analyzer} = $field->analyzer;

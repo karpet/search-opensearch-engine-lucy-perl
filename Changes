@@ -37,3 +37,9 @@ Revision history for Search-OpenSearch-Engine-Lucy
 
 0.11    3 Sept 2012
         * add transaction support with COMMIT and ROLLBACK and auto_commit().
+
+0.12    14 Oct 2012
+        * only include COMMIT and ROLLBACK as supported REST methods
+          if auto_commit is off.
+
+
