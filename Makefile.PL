@@ -22,9 +22,10 @@ WriteMakefile(
     PL_FILES  => {},
     PREREQ_PM => {
         'Test::More'         => 0,
-        'Search::OpenSearch' => 0.20,
+        'Search::OpenSearch' => 0.23,
+        'Search::Tools'      => 0.83,
         'SWISH::Prog::Lucy'  => 0.11,
-        'SWISH::Prog'        => 0.62,
+        'SWISH::Prog'        => 0.64,
         'Module::Load'       => 0,
         'JSON'               => 2.00,
         'Path::Class'        => 0,   # required by SWISH::Prog but be explicit

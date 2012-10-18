@@ -42,4 +42,6 @@ Revision history for Search-OpenSearch-Engine-Lucy
         * only include COMMIT and ROLLBACK as supported REST methods
           if auto_commit is off.
 
+0.13    17 Oct 2012
+        * support LucyX::Suggester if available (Text::Aspell required)
 

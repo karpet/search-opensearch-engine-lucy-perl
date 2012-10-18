@@ -13,6 +13,7 @@ use Scalar::Util qw( blessed );
 use Module::Load;
 use Path::Class::Dir;
 use SWISH::3 qw(:constants);
+use Search::Tools;
 
 our $VERSION = '0.12';
 
@@ -40,7 +41,7 @@ sub init_searcher {
     my $self     = shift;
     my $index    = $self->index or croak "index not defined";
     my $searcher = SWISH::Prog::Lucy::Searcher->new(
-        invindex => $index,
+        invindex => [@$index],      # copy so that suggester can use strings
         debug    => $self->debug,
         %{ $self->searcher_config },
     );
@@ -50,13 +51,43 @@ sub init_searcher {
     return $searcher;
 }
 
+sub init_suggester {
+    my $self            = shift;
+    my %conf            = %{ $self->suggester_config, };
+    my $spellcheck_conf = delete $conf{spellcheck_config} || {};
+    $spellcheck_conf->{query_parser}
+        = Search::Tools->parser( %{ $self->parser_config } );
+
+    # Text::Aspell is optional, so verify we have it
+    # before claiming to have a Suggester.
+    eval {
+        require LucyX::Suggester;
+        $conf{spellcheck} = Search::Tools->spellcheck(%$spellcheck_conf);
+        if ( $ENV{TEST_SPELLCHECK_MISSING} ) {
+            die "testing missing spellcheck";
+        }
+    };
+    if ($@) {
+        if ( $self->debug and $self->logger ) {
+            $self->logger->log("Failed to load LucyX::Suggester: $@");
+        }
+        return;
+    }
+    my $suggester = LucyX::Suggester->new(
+        indexes => $self->index,
+        debug   => $self->debug,
+        %conf,
+    );
+    return $suggester;
+}
+
 sub build_facets {
     my $self    = shift;
     my $query   = shift or croak "query required";
     my $results = shift or croak "results required";
     if ( $self->debug and $self->logger ) {
-        $self->logger->log(
-            "build_facets check for self->facets=" . $self->facets );
+        $self->logger->log( "build_facets check for self->facets="
+                . ( $self->facets || 'undef' ) );
     }
     my $facetobj = $self->facets or return;
 
@@ -412,6 +443,12 @@ Search::OpenSearch::Engine::Lucy - Lucy server with OpenSearch results
     searcher_config => {
         anotherkey => anothervalue,
     },
+    suggester_config => {
+        spellcheck_config => {
+            lang => 'en_US',
+        },
+        limit => 10,
+    },
     aggregator_class => 'MyAggregator', # defaults to SWISH::Prog::Aggregator
     cache           => CHI->new(
         driver           => 'File',
@@ -473,6 +510,11 @@ Returns a SWISH::Prog::Lucy::Searcher object.
 =head2 init_indexer
 
 Returns a SWISH::Prog::Lucy::Indexer object (used by the REST API).
+
+=head2 init_suggester
+
+Returns a LucyX::Suggester object. You can configure it as
+described in the SYNOPSIS.
 
 =head2 build_facets( I<query>, I<results> )
 
