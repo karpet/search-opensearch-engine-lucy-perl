@@ -22,15 +22,16 @@ WriteMakefile(
     PL_FILES  => {},
     PREREQ_PM => {
         'Test::More'         => 0,
-        'Search::OpenSearch' => 0.18,
-        'SWISH::Prog::Lucy'  => 0.07,
-        'SWISH::Prog'        => 0.54,
+        'Search::OpenSearch' => 0.23,
+        'Search::Tools'      => 0.83,
+        'SWISH::Prog::Lucy'  => 0.11,
+        'SWISH::Prog'        => 0.64,
         'Module::Load'       => 0,
         'JSON'               => 2.00,
         'Path::Class'        => 0,   # required by SWISH::Prog but be explicit
     },
     dist => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean => { FILES => 'Search-OpenSearch-Engine-Lucy-*' },
+    clean => { FILES => 'test.index Search-OpenSearch-Engine-Lucy-*' },
     ( $MM_Version >= 6.48 ? ( MIN_PERL_VERSION => '5.8.3' ) : () ),
     ( $MM_Version >= 6.31 ? ( LICENSE          => 'perl' )  : () ),
     (   $MM_Version <= 6.44

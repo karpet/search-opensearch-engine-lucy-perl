@@ -12,13 +12,19 @@ use Data::Dump qw( dump );
 use Scalar::Util qw( blessed );
 use Module::Load;
 use Path::Class::Dir;
+use SWISH::3 qw(:constants);
+use Search::Tools;
 
-our $VERSION = '0.10';
+our $VERSION = '0.13';
 
 __PACKAGE__->mk_accessors(
     qw(
         aggregator_class
+        auto_commit
         )
+);
+
+use Rose::Object::MakeMethods::Generic ( 'scalar --get_set_init' => 'indexer',
 );
 
 sub init {
@@ -26,6 +32,7 @@ sub init {
     $self->SUPER::init(@_);
     $self->{aggregator_class} ||= 'SWISH::Prog::Aggregator';
     $self->{array_field_values} = 1;
+    $self->{auto_commit} = 1 unless defined $self->{auto_commit};
     load $self->{aggregator_class};
     return $self;
 }
@@ -34,7 +41,7 @@ sub init_searcher {
     my $self     = shift;
     my $index    = $self->index or croak "index not defined";
     my $searcher = SWISH::Prog::Lucy::Searcher->new(
-        invindex => $index,
+        invindex => [@$index],      # copy so that suggester can use strings
         debug    => $self->debug,
         %{ $self->searcher_config },
     );
@@ -44,13 +51,43 @@ sub init_searcher {
     return $searcher;
 }
 
+sub init_suggester {
+    my $self            = shift;
+    my %conf            = %{ $self->suggester_config, };
+    my $spellcheck_conf = delete $conf{spellcheck_config} || {};
+    $spellcheck_conf->{query_parser}
+        = Search::Tools->parser( %{ $self->parser_config } );
+
+    # Text::Aspell is optional, so verify we have it
+    # before claiming to have a Suggester.
+    eval {
+        require LucyX::Suggester;
+        $conf{spellcheck} = Search::Tools->spellcheck(%$spellcheck_conf);
+        if ( $ENV{TEST_SPELLCHECK_MISSING} ) {
+            die "testing missing spellcheck";
+        }
+    };
+    if ($@) {
+        if ( $self->debug and $self->logger ) {
+            $self->logger->log("Failed to load LucyX::Suggester: $@");
+        }
+        return;
+    }
+    my $suggester = LucyX::Suggester->new(
+        indexes => $self->index,
+        debug   => $self->debug,
+        %conf,
+    );
+    return $suggester;
+}
+
 sub build_facets {
     my $self    = shift;
     my $query   = shift or croak "query required";
     my $results = shift or croak "results required";
     if ( $self->debug and $self->logger ) {
-        $self->logger->log(
-            "build_facets check for self->facets=" . $self->facets );
+        $self->logger->log( "build_facets check for self->facets="
+                . ( $self->facets || 'undef' ) );
     }
     my $facetobj = $self->facets or return;
 
@@ -115,6 +152,14 @@ sub build_facets {
 }
 
 sub has_rest_api {1}
+
+sub get_allowed_http_methods {
+    my $self = shift;
+    if ( $self->auto_commit ) {
+        return qw( GET POST PUT DELETE );
+    }
+    return qw( GET POST PUT DELETE COMMIT ROLLBACK );
+}
 
 sub _massage_rest_req_into_doc {
     my ( $self, $req ) = @_;
@@ -187,7 +232,8 @@ sub PUT {
     my $exists;
     my $index = $self->index or croak "index not defined";
     if (   -d $index->[0]
-        && -s Path::Class::Dir->new( $index->[0] )->file('swish.xml') )
+        && -s Path::Class::Dir->new( $index->[0] )
+        ->file( SWISH_HEADER_FILE() ) )
     {
         $exists = $self->GET($uri);
         if ( $exists->{code} == 200 ) {
@@ -195,8 +241,17 @@ sub PUT {
         }
     }
 
-    my $indexer = $self->init_indexer();
+    my $indexer
+        = $self->auto_commit
+        ? $self->init_indexer()
+        : $self->indexer();
     $indexer->process($doc);
+
+    if ( !$self->auto_commit ) {
+        my $total = 1;
+        return { code => 202, total => 1, };
+    }
+
     my $total = $indexer->finish();
     $exists = $self->GET( $doc->url );
     if ( $exists->{code} != 200 ) {
@@ -207,12 +262,21 @@ sub PUT {
 
 # POST allows new and updates
 sub POST {
-    my $self    = shift;
-    my $req     = shift or croak "request required";
-    my $doc     = $self->_massage_rest_req_into_doc($req);
-    my $uri     = $doc->url;
-    my $indexer = $self->init_indexer();
+    my $self = shift;
+    my $req  = shift or croak "request required";
+    my $doc  = $self->_massage_rest_req_into_doc($req);
+    my $uri  = $doc->url;
+    my $indexer
+        = $self->auto_commit
+        ? $self->init_indexer()
+        : $self->indexer();
     $indexer->process($doc);
+
+    if ( !$self->auto_commit ) {
+        my $total = 1;
+        return { code => 202, total => 1, };
+    }
+
     my $total  = $indexer->finish();
     my $exists = $self->GET( $doc->url );
 
@@ -220,6 +284,38 @@ sub POST {
         return { code => 500, msg => 'Failed to POST doc' };
     }
     return { code => 200, total => $total, doc => $exists->{doc} };
+}
+
+sub COMMIT {
+    my $self = shift;
+    if ( $self->auto_commit ) {
+        return { code => 400 };
+    }
+    my $indexer = $self->indexer();
+    if ( my $total = $indexer->count() ) {
+        $indexer->finish();
+
+        # MUST invalidate current indexer
+        $self->indexer(undef);
+
+        return { code => 200, total => $total };
+    }
+    else {
+        return { code => 204 };
+    }
+}
+
+sub ROLLBACK {
+    my $self = shift;
+    if ( !$self->auto_commit ) {
+        my $reverted = $self->indexer->count;
+        $self->indexer->abort();
+        $self->indexer(undef);
+        return { code => 200, total => $reverted };
+    }
+    else {
+        return { code => 400 };
+    }
 }
 
 sub DELETE {
@@ -232,15 +328,21 @@ sub DELETE {
             msg  => "$uri cannot be deleted because it does not exist"
         };
     }
-    my $indexer = $self->init_indexer();
+    my $indexer
+        = $self->auto_commit
+        ? $self->init_indexer()
+        : $self->indexer;
     $indexer->get_lucy->delete_by_term(
         field => 'swishdocpath',
         term  => $uri,
     );
+
+    if ( !$self->auto_commit ) {
+        return { code => 202 };
+    }
+
     $indexer->finish();
-    return {
-        code => 204,    # no content in response
-    };
+    return { code => 200, };
 }
 
 sub _get_swishdocpath_analyzer {
@@ -252,7 +354,7 @@ sub _get_swishdocpath_analyzer {
 
         # field is not defined as a MetaName, just a PropertyName,
         # so we do not analyze it
-        $self->{_uri_analyzer} = 0;            # exists but false
+        $self->{_uri_analyzer} = 0;    # exists but false
         return 0;
     }
     $self->{_uri_analyzer} = $field->analyzer;
@@ -341,6 +443,12 @@ Search::OpenSearch::Engine::Lucy - Lucy server with OpenSearch results
     searcher_config => {
         anotherkey => anothervalue,
     },
+    suggester_config => {
+        spellcheck_config => {
+            lang => 'en_US',
+        },
+        limit => 10,
+    },
     aggregator_class => 'MyAggregator', # defaults to SWISH::Prog::Aggregator
     cache           => CHI->new(
         driver           => 'File',
@@ -378,6 +486,18 @@ Search::OpenSearch::Engine::Lucy - Lucy server with OpenSearch results
 Passed as param to new(). This class is used for filtering
 incoming docs via the aggregator's swish_filter() method.
 
+=head2 auto_commit( 0 | 1 )
+
+Set this in new().
+
+If true, a new indexer is spawned via init_indexer() for
+each POST, PUT or DELETE.
+
+If false, the same indexer is re-used in POST, PUT or DELETE
+calls, until COMMIT or ROLLBACK is called.
+
+Default is true (on).
+
 =head2 init
 
 Overrides base method to load the I<aggregator_class> and other
@@ -391,6 +511,11 @@ Returns a SWISH::Prog::Lucy::Searcher object.
 
 Returns a SWISH::Prog::Lucy::Indexer object (used by the REST API).
 
+=head2 init_suggester
+
+Returns a LucyX::Suggester object. You can configure it as
+described in the SYNOPSIS.
+
 =head2 build_facets( I<query>, I<results> )
 
 Returns hash ref of facets from I<results>. See Search::OpenSearch::Engine.
@@ -403,6 +528,14 @@ Overrides base method to preserve multi-value fields as arrays.
 
 Returns true.
 
+=head2 get_allowed_http_methods
+
+Returns array (not an array ref) of supported HTTP method names.
+These correspond to the UPPERCASE method names below.
+
+B<NOTE> that COMMIT and ROLLBACK are not official HTTP/1.1 method
+names.
+
 =head2 PUT( I<doc> )
 
 =head2 POST( I<doc> )
@@ -410,6 +543,14 @@ Returns true.
 =head2 DELETE( I<uri> )
 
 =head2 GET( I<uri> )
+
+=head2 COMMIT
+
+If auto_commit is false, use this method to conclude a transaction.
+
+=head2 ROLLBACK
+
+If auto_commit is false, use this method to abort a transaction.
 
 =head1 AUTHOR
 
