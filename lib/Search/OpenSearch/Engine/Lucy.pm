@@ -376,8 +376,9 @@ sub _analyze_uri_string {
 }
 
 sub GET {
-    my $self = shift;
-    my $uri = shift or croak "uri required";
+    my $self   = shift;
+    my $uri    = shift or croak "uri required";
+    my $params = shift;                           # undef ok
 
     # use internal Lucy searcher directly to avoid needing MetaName defined
     my $q = Lucy::Search::PhraseQuery->new(
@@ -408,6 +409,29 @@ sub GET {
     }
     $doc{title}   = $hitdoc->{swishtitle};
     $doc{summary} = $hitdoc->{swishdescription};
+
+    # highlight query string if present
+    if ( $params and $params->{q} ) {
+        my %hiliter_config = %{ $self->hiliter_config };
+        my %parser_config  = %{ $self->parser_config };
+        my $query
+            = Search::Tools->parser(%parser_config)->parse( $params->{q} );
+        my $hiliter
+            = Search::Tools->hiliter( query => $query, %hiliter_config );
+
+        for my $f ( keys %doc ) {
+            if ( ref $doc{$f} ) {
+                my @hv;
+                for my $v ( @{ $doc{$f} } ) {
+                    push @hv, $hiliter->light($v);
+                }
+                $doc{$f} = \@hv;
+            }
+            else {
+                $doc{$f} = $hiliter->light( $doc{$f} );
+            }
+        }
+    }
 
     my $ret = {
         code => 200,
