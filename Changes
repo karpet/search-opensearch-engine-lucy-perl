@@ -45,5 +45,5 @@ Revision history for Search-OpenSearch-Engine-Lucy
 0.13    17 Oct 2012
         * support LucyX::Suggester if available (Text::Aspell required)
 
-0.14    xxx
+0.14    04 Jan 2013
         * optionally highlight search terms in REST GET() method
