@@ -15,7 +15,7 @@ use Path::Class::Dir;
 use SWISH::3 qw(:constants);
 use Search::Tools;
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -420,6 +420,7 @@ sub GET {
             = Search::Tools->hiliter( query => $query, %hiliter_config );
 
         for my $f ( keys %doc ) {
+            next if $self->no_hiliting($f);
             if ( ref $doc{$f} ) {
                 my @hv;
                 for my $v ( @{ $doc{$f} } ) {

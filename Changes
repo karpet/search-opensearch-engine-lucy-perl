@@ -47,3 +47,7 @@ Revision history for Search-OpenSearch-Engine-Lucy
 
 0.14    04 Jan 2013
         * optionally highlight search terms in REST GET() method
+
+0.15    xxx
+        * respect no_hiliting() method in REST GET() method
+
