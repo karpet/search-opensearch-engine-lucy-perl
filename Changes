@@ -51,3 +51,6 @@ Revision history for Search-OpenSearch-Engine-Lucy
 0.15    08 Jan 2013
         * respect no_hiliting() method in REST GET() method
 
+0.16    27 Jan 2013
+        * implement type() method documented in parent class.
+
