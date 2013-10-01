@@ -2,8 +2,6 @@ Changes
 lib/Search/OpenSearch/Engine/Lucy.pm
 Makefile.PL
 MANIFEST
-MYMETA.json
-MYMETA.yml
 README
 t/00-load.t
 t/01-rest-api.t
