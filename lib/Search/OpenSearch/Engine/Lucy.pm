@@ -15,7 +15,7 @@ use Path::Class::Dir;
 use SWISH::3 qw(:constants);
 use Search::Tools;
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 __PACKAGE__->mk_accessors(
     qw(

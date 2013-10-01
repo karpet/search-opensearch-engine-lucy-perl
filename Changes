@@ -1,5 +1,8 @@
 Revision history for Search-OpenSearch-Engine-Lucy
 
+0.17 01 Oct 2013
+ - packaging clean up only
+
 0.16 27 Jan 2013
  - implement type() method documented in parent class.
 
