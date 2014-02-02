@@ -1,5 +1,8 @@
 Revision history for Search-OpenSearch-Engine-Lucy
 
+0.18 02 Feb 2014
+ - include 'mtime' in GET response
+
 0.17 01 Oct 2013
  - packaging clean up only
 

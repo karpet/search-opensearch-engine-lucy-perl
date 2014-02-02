@@ -15,7 +15,7 @@ use Path::Class::Dir;
 use SWISH::3 qw(:constants);
 use Search::Tools;
 
-our $VERSION = '0.17';
+our $VERSION = '0.18';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -27,7 +27,7 @@ __PACKAGE__->mk_accessors(
 use Rose::Object::MakeMethods::Generic ( 'scalar --get_set_init' => 'indexer',
 );
 
-sub type { 'Lucy' }
+sub type {'Lucy'}
 
 sub init {
     my $self = shift;
@@ -411,6 +411,7 @@ sub GET {
     }
     $doc{title}   = $hitdoc->{swishtitle};
     $doc{summary} = $hitdoc->{swishdescription};
+    $doc{mtime}   = $hitdoc->{swishlastmodified};
 
     # highlight query string if present
     if ( $params and $params->{q} ) {
