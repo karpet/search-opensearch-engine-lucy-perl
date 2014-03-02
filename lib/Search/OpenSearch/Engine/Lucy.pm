@@ -15,7 +15,7 @@ use Path::Class::Dir;
 use SWISH::3 qw(:constants);
 use Search::Tools;
 
-our $VERSION = '0.18';
+our $VERSION = '0.18_01';
 
 __PACKAGE__->mk_accessors(
     qw(
@@ -85,7 +85,8 @@ sub init_suggester {
 
 sub build_facets {
     my $self    = shift;
-    my $query   = shift or croak "query required";
+    my $query   = shift;
+    confess "query required" unless defined $query;
     my $results = shift or croak "results required";
     if ( $self->debug and $self->logger ) {
         $self->logger->log( "build_facets check for self->facets="
