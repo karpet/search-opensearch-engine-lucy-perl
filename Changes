@@ -1,6 +1,6 @@
 Revision history for Search-OpenSearch-Engine-Lucy
 
-0.299_01 xxx
+0.299_01 22 April 2014
  - port to Moose for Search::OpenSearch 0.400
 
 0.19 02 March 2014
