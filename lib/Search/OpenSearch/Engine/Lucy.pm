@@ -257,16 +257,30 @@ sub PUT {
     return { code => 201, total => $total, doc => $exists->{doc} };
 }
 
+sub _get_indexer {
+    my $self = shift;
+
+    # autocommit means we must manage our own indexer
+    # since we want to invalidate and re-create
+
+    if ( $self->auto_commit ) {
+        return $self->init_indexer();
+    }
+
+    # did we have an indexer and it was invalidated? get new one.
+    if ( !$self->indexer ) {
+        $self->indexer( $self->init_indexer );
+    }
+    return $self->indexer;
+}
+
 # POST allows new and updates
 sub POST {
-    my $self = shift;
-    my $req  = shift or croak "request required";
-    my $doc  = $self->_massage_rest_req_into_doc($req);
-    my $uri  = $doc->url;
-    my $indexer
-        = $self->auto_commit
-        ? $self->init_indexer()
-        : $self->indexer();
+    my $self    = shift;
+    my $req     = shift or croak "request required";
+    my $doc     = $self->_massage_rest_req_into_doc($req);
+    my $uri     = $doc->url;
+    my $indexer = $self->_get_indexer;
     $indexer->process($doc);
 
     if ( !$self->auto_commit ) {
@@ -289,6 +303,12 @@ sub COMMIT {
         return { code => 400 };
     }
     my $indexer = $self->indexer();
+
+    # is it possible to get here? croak just in case.
+    if ( !$indexer ) {
+        confess "Can't call COMMIT on an undefined indexer";
+    }
+
     if ( my $total = $indexer->count() ) {
         $indexer->finish();
 
@@ -325,10 +345,7 @@ sub DELETE {
             msg  => "$uri cannot be deleted because it does not exist"
         };
     }
-    my $indexer
-        = $self->auto_commit
-        ? $self->init_indexer()
-        : $self->indexer;
+    my $indexer = $self->_get_indexer();
     $indexer->get_lucy->delete_by_term(
         field => 'swishdocpath',
         term  => $uri,
