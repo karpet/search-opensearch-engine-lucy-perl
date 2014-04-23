@@ -61,5 +61,5 @@ SKIP: {
 
     $resp = $engine->DELETE('foo/bar');
     $debug and dump($resp);
-    is( $resp->{code}, 204, "DELETE == 204" );
+    is( $resp->{code}, 200, "DELETE == 200" );
 }
