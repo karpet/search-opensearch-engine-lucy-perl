@@ -1,6 +1,6 @@
 Revision history for Search-OpenSearch-Engine-Lucy
 
-0.299_02 xxx
+0.299_02 23 April 2014
  - fix internal indexer management for auto-commit, etc.
 
 0.299_01 22 April 2014
