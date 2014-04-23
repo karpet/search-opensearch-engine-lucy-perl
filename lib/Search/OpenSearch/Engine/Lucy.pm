@@ -1,8 +1,8 @@
 package Search::OpenSearch::Engine::Lucy;
-use strict;
-use warnings;
+use Moose;
 use Carp;
-use base qw( Search::OpenSearch::Engine );
+extends 'Search::OpenSearch::Engine';
+use Types::Standard qw( Bool Str );
 use SWISH::Prog::Lucy::Indexer;
 use SWISH::Prog::Lucy::Searcher;
 use SWISH::Prog::Doc;
@@ -10,32 +10,22 @@ use Lucy::Object::BitVector;
 use Lucy::Search::Collector::BitCollector;
 use Data::Dump qw( dump );
 use Scalar::Util qw( blessed );
-use Module::Load;
+use Class::Load;
 use Path::Class::Dir;
 use SWISH::3 qw(:constants);
 use Search::Tools;
 
 our $VERSION = '0.19';
 
-__PACKAGE__->mk_accessors(
-    qw(
-        aggregator_class
-        auto_commit
-        )
-);
-
-use Rose::Object::MakeMethods::Generic ( 'scalar --get_set_init' => 'indexer',
-);
+has 'aggregator_class' =>
+    ( is => 'rw', isa => Str, default => sub {'SWISH::Prog::Aggregator'} );
+has 'auto_commit' => ( is => 'rw', isa => Bool, default => sub {1} );
 
 sub type {'Lucy'}
 
-sub init {
+sub BUILD {
     my $self = shift;
-    $self->SUPER::init(@_);
-    $self->{aggregator_class} ||= 'SWISH::Prog::Aggregator';
-    $self->{array_field_values} = 1;
-    $self->{auto_commit} = 1 unless defined $self->{auto_commit};
-    load $self->{aggregator_class};
+    Class::Load::load_class( $self->aggregator_class );
     return $self;
 }
 
@@ -84,8 +74,8 @@ sub init_suggester {
 }
 
 sub build_facets {
-    my $self    = shift;
-    my $query   = shift;
+    my $self  = shift;
+    my $query = shift;
     confess "query required" unless defined $query;
     my $results = shift or croak "results required";
     if ( $self->debug and $self->logger ) {
