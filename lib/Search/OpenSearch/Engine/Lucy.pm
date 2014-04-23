@@ -14,6 +14,7 @@ use Class::Load;
 use Path::Class::Dir;
 use SWISH::3 qw(:constants);
 use Search::Tools;
+use Try::Tiny;
 
 our $VERSION = '0.299_01';
 
@@ -31,7 +32,7 @@ sub BUILD {
 
 sub init_searcher {
     my $self     = shift;
-    my $index    = $self->index or croak "index not defined";
+    my $index    = $self->index or confess "index not defined";
     my $searcher = SWISH::Prog::Lucy::Searcher->new(
         invindex => [@$index],      # copy so that suggester can use strings
         debug    => $self->debug,
@@ -52,19 +53,22 @@ sub init_suggester {
 
     # Text::Aspell is optional, so verify we have it
     # before claiming to have a Suggester.
-    eval {
+    my $has_suggester = try {
         require LucyX::Suggester;
         $conf{spellcheck} = Search::Tools->spellcheck(%$spellcheck_conf);
         if ( $ENV{TEST_SPELLCHECK_MISSING} ) {
             die "testing missing spellcheck";
         }
-    };
-    if ($@) {
-        if ( $self->debug and $self->logger ) {
-            $self->logger->log("Failed to load LucyX::Suggester: $@");
-        }
-        return;
+        return 1;
     }
+    catch {
+        if ( $self->debug and $self->logger ) {
+            $self->logger->log("Failed to load LucyX::Suggester: $_");
+        }
+        return 0;
+    };
+    return unless $has_suggester;
+
     my $suggester = LucyX::Suggester->new(
         indexes => $self->index,
         debug   => $self->debug,
