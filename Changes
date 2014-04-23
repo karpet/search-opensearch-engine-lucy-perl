@@ -1,5 +1,8 @@
 Revision history for Search-OpenSearch-Engine-Lucy
 
+0.299_02 xxx
+ - fix internal indexer management for auto-commit, etc.
+
 0.299_01 22 April 2014
  - port to Moose for Search::OpenSearch 0.400
 
