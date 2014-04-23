@@ -521,7 +521,7 @@ calls, until COMMIT or ROLLBACK is called.
 
 Default is true (on).
 
-=head2 init
+=head2 BUILD
 
 Overrides base method to load the I<aggregator_class> and other
 Engine-specific construction tasks.
