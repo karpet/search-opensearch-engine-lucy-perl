@@ -15,7 +15,7 @@ use Path::Class::Dir;
 use SWISH::3 qw(:constants);
 use Search::Tools;
 
-our $VERSION = '0.19';
+our $VERSION = '0.299_01';
 
 has 'aggregator_class' =>
     ( is => 'rw', isa => Str, default => sub {'SWISH::Prog::Aggregator'} );

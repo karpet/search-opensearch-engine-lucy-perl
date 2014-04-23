@@ -1,5 +1,8 @@
 Revision history for Search-OpenSearch-Engine-Lucy
 
+0.299_01 xxx
+ - port to Moose for Search::OpenSearch 0.400
+
 0.19 02 March 2014
  - check for !defined $query rather than !$query
 
