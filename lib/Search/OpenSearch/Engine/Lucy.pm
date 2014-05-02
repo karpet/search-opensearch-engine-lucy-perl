@@ -205,13 +205,22 @@ sub _massage_rest_req_into_doc {
 
 sub init_indexer {
     my $self = shift;
+    my $idx = shift || 0;
+
+    if ( $idx =~ m/\D/ ) {
+        confess "idx must be an integer for reading into array of index()";
+    }
+    if ( $idx > scalar @{ $self->index } ) {
+        confess sprintf( "idx %d > than index array size %d",
+            $idx, scalar @{ $self->index } );
+    }
 
     # unlike a Searcher, which has an array of invindex objects,
     # the Indexer wants only one. We take the first by default,
     # but a subclass could do more subtle logic here.
 
     my $indexer = SWISH::Prog::Lucy::Indexer->new(
-        invindex => $self->index->[0],
+        invindex => $self->index->[$idx],
         debug    => $self->debug,
         %{ $self->indexer_config },
     );
@@ -264,12 +273,12 @@ sub _get_indexer {
     # since we want to invalidate and re-create
 
     if ( $self->auto_commit ) {
-        return $self->init_indexer();
+        return $self->init_indexer(@_);
     }
 
     # did we have an indexer and it was invalidated? get new one.
     if ( !$self->indexer ) {
-        $self->indexer( $self->init_indexer );
+        $self->indexer( $self->init_indexer(@_) );
     }
     return $self->indexer;
 }
