@@ -1,5 +1,9 @@
 Revision history for Search-OpenSearch-Engine-Lucy
 
+0.299_03 xxx
+ - DELETE operates on all indexes, just like GET and search do.
+ - add notes that PUT and POST operate only on the first index defined.
+
 0.299_02 23 April 2014
  - fix internal indexer management for auto-commit, etc.
 
