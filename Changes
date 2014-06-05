@@ -1,6 +1,6 @@
 Revision history for Search-OpenSearch-Engine-Lucy
 
-0.299_03 xxx
+0.299_03 05 June 2014
  - DELETE operates on all indexes, just like GET and search do.
  - add notes that PUT and POST operate only on the first index defined.
 
