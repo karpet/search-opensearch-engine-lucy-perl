@@ -16,7 +16,7 @@ use SWISH::3 qw(:constants);
 use Search::Tools;
 use Try::Tiny;
 
-our $VERSION = '0.299_03';
+our $VERSION = '0.300';
 
 has 'aggregator_class' =>
     ( is => 'rw', isa => Str, default => sub {'SWISH::Prog::Aggregator'} );

@@ -24,7 +24,7 @@ WriteMakefile(
         'Test::More'                   => 0,
         'Moose'                        => 0,
         'Type::Tiny'                   => 0,
-        'Search::OpenSearch'           => '0.399_03',
+        'Search::OpenSearch'           => '0.400',
         'Search::Tools'                => '1.000',
         'Search::Query::Dialect::Lucy' => '0.200',
         'SWISH::Prog::Lucy'            => 0.11,
