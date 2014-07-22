@@ -3,23 +3,22 @@ use Moose;
 use Carp;
 extends 'Search::OpenSearch::Engine';
 use Types::Standard qw( Bool Str );
-use SWISH::Prog::Lucy::Indexer;
-use SWISH::Prog::Lucy::Searcher;
-use SWISH::Prog::Doc;
+use Dezi::Lucy::Indexer;
+use Dezi::Lucy::Searcher;
+use Dezi::Indexer::Doc;
 use Lucy::Object::BitVector;
 use Lucy::Search::Collector::BitCollector;
 use Data::Dump qw( dump );
 use Scalar::Util qw( blessed );
 use Class::Load;
 use Path::Class::Dir;
-use SWISH::3 qw(:constants);
 use Search::Tools;
 use Try::Tiny;
 
-our $VERSION = '0.300';
+our $VERSION = '0.400';
 
 has 'aggregator_class' =>
-    ( is => 'rw', isa => Str, default => sub {'SWISH::Prog::Aggregator'} );
+    ( is => 'rw', isa => Str, default => sub {'Dezi::Aggregator'} );
 has 'auto_commit' => ( is => 'rw', isa => Bool, default => sub {1} );
 
 sub type {'Lucy'}
@@ -33,7 +32,7 @@ sub BUILD {
 sub init_searcher {
     my $self     = shift;
     my $index    = $self->index or confess "index not defined";
-    my $searcher = SWISH::Prog::Lucy::Searcher->new(
+    my $searcher = Dezi::Lucy::Searcher->new(
         invindex => [@$index],      # copy so that suggester can use strings
         debug    => $self->debug,
         %{ $self->searcher_config },
@@ -81,7 +80,7 @@ sub build_facets {
     my $self  = shift;
     my $query = shift;
     confess "query required" unless defined $query;
-    my $results = shift or croak "results required";
+    my $results = shift or confess "results required";
     if ( $self->debug and $self->logger ) {
         $self->logger->log( "build_facets check for self->facets="
                 . ( $self->facets || 'undef' ) );
@@ -165,7 +164,7 @@ sub _massage_rest_req_into_doc {
     my $doc;
 
     if ( !blessed($req) ) {
-        $doc = SWISH::Prog::Doc->new(
+        $doc = Dezi::Indexer::Doc->new(
             version => 3,
             %$req
         );
@@ -190,7 +189,7 @@ sub _massage_rest_req_into_doc {
 
         #dump \%args;
 
-        $doc = SWISH::Prog::Doc->new(%args);
+        $doc = Dezi::Indexer::Doc->new(%args);
 
     }
 
@@ -219,7 +218,7 @@ sub init_indexer {
     # the Indexer wants only one. We take the first by default,
     # but a subclass could do more subtle logic here.
 
-    my $indexer = SWISH::Prog::Lucy::Indexer->new(
+    my $indexer = Dezi::Lucy::Indexer->new(
         invindex => $self->index->[$idx],
         debug    => $self->debug,
         %{ $self->indexer_config },
@@ -231,16 +230,15 @@ sub init_indexer {
 # note PUT operates only on first index if there are multiple.
 sub PUT {
     my $self = shift;
-    my $req  = shift or croak "request required";
+    my $req  = shift or confess "request required";
     my $doc  = $self->_massage_rest_req_into_doc($req);
     my $uri  = $doc->url;
 
     # edge case: index might not yet exist.
     my $exists;
-    my $index = $self->index or croak "index not defined";
+    my $index = $self->index or confess "index not defined";
     if (   -d $index->[0]
-        && -s Path::Class::Dir->new( $index->[0] )
-        ->file( SWISH_HEADER_FILE() ) )
+        && -s Dezi::Lucy::InvIndex->new( $index->[0] . "" )->header_file )
     {
         $exists = $self->GET($uri);
         if ( $exists->{code} == 200 ) {
@@ -288,7 +286,7 @@ sub _get_indexer {
 # note POST operates only on first index if there are multiple
 sub POST {
     my $self    = shift;
-    my $req     = shift or croak "request required";
+    my $req     = shift or confess "request required";
     my $doc     = $self->_massage_rest_req_into_doc($req);
     my $uri     = $doc->url;
     my $indexer = $self->_get_indexer;
@@ -348,7 +346,7 @@ sub ROLLBACK {
 
 sub DELETE {
     my $self     = shift;
-    my $uri      = shift or croak "uri required";
+    my $uri      = shift or confess "uri required";
     my $existing = $self->GET($uri);
     if ( $existing->{code} != 200 ) {
         return {
@@ -405,8 +403,8 @@ sub _analyze_uri_string {
 
 sub GET {
     my $self   = shift;
-    my $uri    = shift or croak "uri required";
-    my $params = shift;                           # undef ok
+    my $uri    = shift or confess "uri required";
+    my $params = shift;                             # undef ok
 
     # use internal Lucy searcher directly to avoid needing MetaName defined
     my $q = Lucy::Search::PhraseQuery->new(
@@ -503,7 +501,7 @@ Search::OpenSearch::Engine::Lucy - Lucy server with OpenSearch results
         },
         limit => 10,
     },
-    aggregator_class => 'MyAggregator', # defaults to SWISH::Prog::Aggregator
+    aggregator_class => 'MyAggregator', # defaults to Dezi::Aggregator
     cache           => CHI->new(
         driver           => 'File',
         dir_create_mode  => 0770,
@@ -563,11 +561,11 @@ Engine-specific construction tasks.
 
 =head2 init_searcher
 
-Returns a SWISH::Prog::Lucy::Searcher object.
+Returns a Dezi::Lucy::Searcher object.
 
 =head2 init_indexer
 
-Returns a SWISH::Prog::Lucy::Indexer object (used by the REST API).
+Returns a Dezi::Lucy::Indexer object (used by the REST API).
 
 =head2 init_suggester
 

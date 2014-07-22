@@ -27,11 +27,10 @@ WriteMakefile(
         'Search::OpenSearch'           => '0.400',
         'Search::Tools'                => '1.000',
         'Search::Query::Dialect::Lucy' => '0.200',
-        'SWISH::Prog::Lucy'            => 0.11,
-        'SWISH::Prog'                  => 0.64,
+        'Dezi::App'                    => '0.004',
         'Class::Load'                  => 0,
         'JSON'                         => 2.00,
-        'Path::Class' => 0,    # required by SWISH::Prog but be explicit
+        'Path::Class' => 0,    # required by Dezi::App but be explicit
     },
     dist => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'test.index Search-OpenSearch-Engine-Lucy-*' },

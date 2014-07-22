@@ -20,6 +20,10 @@ SKIP: {
         diag("set OPENSEARCH_INDEX to valid path to test Plack with Lucy");
         skip "set OPENSEARCH_INDEX to valid path to test Plack with Lucy", 1;
     }
+    if ( !defined $ENV{TEST_LEAKS}) {
+        diag("set TEST_LEAKS to test leaks");
+        skip "set TEST_LEAKS=1 to test leaks", 1;
+    }
 
     leaks_cmp_ok {
         my $engine = Search::OpenSearch->engine(
